@@ -83,7 +83,7 @@ export default async function InventoryHealthPage() {
         <div className="p-5">
           <StackedBar className="h-4" segments={(Object.keys(COLORS) as StockStatus[]).map((s) => ({ value: h.byStatus[s].value, className: COLORS[s], label: STATUS_META[s].label }))} />
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
-            {(Object.keys(COLORS) as StockStatus[]).map((s) => (
+            {(Object.keys(COLORS) as StockStatus[]).filter((s) => h.byStatus[s].count > 0).map((s) => (
               <Link key={s} href={`/inventory?status=${s}`} className="rounded-lg border border-line px-3 py-2 hover:bg-subtle">
                 <div className="flex items-center gap-1.5 text-xs text-muted">
                   <span className={cn("h-2 w-2 rounded-sm", COLORS[s])} /> {STATUS_META[s].label}

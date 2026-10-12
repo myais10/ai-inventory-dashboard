@@ -95,7 +95,7 @@ export function InventoryTable({ rows, initialStatus }: { rows: InventoryRow[]; 
         set(e.target.value);
         setPage(0);
       }}
-      className={cn("h-8 rounded-md border bg-white px-2 text-[13px] outline-none", value ? "border-brand-200 bg-brand-50/50 text-brand-900" : "border-line-strong text-ink-2")}
+      className={cn("h-8 max-w-[200px] rounded-md border bg-white px-2 text-[13px] outline-none", value ? "border-brand-200 bg-brand-50/50 text-brand-900" : "border-line-strong text-ink-2")}
     >
       <option value="">{label}: All</option>
       {opts.map((o) => (

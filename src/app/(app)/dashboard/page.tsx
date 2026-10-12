@@ -128,7 +128,7 @@ export default async function DashboardPage() {
 
       {/* Action required + health */}
       <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
-        <section>
+        <section className="min-w-0">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-ink">Action required</h2>
@@ -145,13 +145,13 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        <aside className="space-y-6">
+        <aside className="min-w-0 space-y-6">
           <Card>
             <CardHeader title="Inventory health" description={`${fmtPct(health.healthyPct)} of SKUs healthy`} actions={<Link href="/inventory/health" className="text-xs text-brand-600 hover:underline">Details</Link>} />
             <div className="p-5">
               <StackedBar segments={statusOrder.map((s) => ({ value: health.byStatus[s].value, className: statusColor[s], label: STATUS_META[s].label }))} />
               <ul className="mt-4 space-y-2">
-                {statusOrder.map((s) => (
+                {statusOrder.filter((s) => health.byStatus[s].count > 0).map((s) => (
                   <li key={s} className="flex items-center gap-2 text-[13px]">
                     <span className={cn("h-2 w-2 rounded-sm", statusColor[s])} />
                     <span className="flex-1 text-ink-2">{STATUS_META[s].label}</span>

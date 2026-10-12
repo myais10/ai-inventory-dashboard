@@ -13,7 +13,7 @@ export type { Workspace } from "./workspace";
 
 const sampleCache = new Map<string, Workspace>();
 
-function sampleWorkspace(): Workspace {
+export function sampleWorkspace(): Workspace {
   const asOf = todayISO();
   let ws = sampleCache.get(asOf);
   if (!ws) {

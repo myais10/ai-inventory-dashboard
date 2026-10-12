@@ -147,9 +147,9 @@ export function Header({ companyName, userName, userEmail, role, searchIndex, no
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-line bg-white/90 px-4 backdrop-blur sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 print:hidden flex h-14 items-center gap-3 border-b border-line bg-white/90 px-4 backdrop-blur sm:px-6 lg:px-8">
       {mobileMenuButton}
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 flex-1 items-center gap-2 md:flex-none">
         <div className="hidden h-7 w-7 items-center justify-center rounded-md bg-slate-100 text-ink-2 sm:flex">
           <Building2 className="h-3.5 w-3.5" />
         </div>
@@ -159,14 +159,17 @@ export function Header({ companyName, userName, userEmail, role, searchIndex, no
       <button
         type="button"
         onClick={() => setSearchOpen(true)}
-        className="ml-auto flex h-8 w-full max-w-[340px] items-center gap-2 rounded-lg border border-line bg-subtle px-3 text-left text-[13px] text-faint transition-colors hover:border-line-strong md:ml-6"
+        className="ml-auto hidden h-8 w-full max-w-[340px] items-center gap-2 sm:flex rounded-lg border border-line bg-subtle px-3 text-left text-[13px] text-faint transition-colors hover:border-line-strong md:ml-6"
       >
         <Search className="h-3.5 w-3.5" />
         <span className="flex-1 truncate">Search SKUs, products, suppliers…</span>
         <kbd className="hidden rounded border border-line bg-white px-1.5 text-[10px] text-muted sm:inline">⌘K</kbd>
       </button>
 
-      <div className="flex items-center gap-1 md:ml-auto">
+      <div className="flex shrink-0 items-center gap-1 md:ml-auto">
+        <button type="button" onClick={() => setSearchOpen(true)} className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-2 hover:bg-slate-100 sm:hidden" aria-label="Search">
+          <Search className="h-4 w-4" />
+        </button>
         <button
           type="button"
           onClick={() => setAssistantOpen(true)}

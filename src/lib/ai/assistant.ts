@@ -37,7 +37,7 @@ export function answerQuestion(ws: Workspace, question: string): AssistantAnswer
   const q = question.toLowerCase();
   const category = detectCategory(q);
   const scope = category ? ws.metrics.filter((m) => m.product.category === category) : ws.metrics;
-  const scopeLabel = category ? category.toLowerCase() : "";
+  const scopeLabel = category ? category.replace(/s$/, "").toLowerCase() : "";
 
   const sku = ws.metrics.find((m) => q.includes(m.product.sku.toLowerCase()) || q.includes(m.product.sku.toLowerCase().replace(/-/g, " ")));
   if (sku) {

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, PackageX, SearchX, ShoppingCart, TrendingUp, Truck } from "lucide-react";
 import { Logo } from "@/components/app/logo";
 import { getSession } from "@/lib/auth/session";
+import { sampleWorkspace } from "@/lib/data";
+import { fmtCompactCurrency } from "@/lib/utils";
 
 const FEATURES = [
   { icon: ShoppingCart, title: "Reorder intelligence", body: "Exact order quantities from sales velocity, lead times, open POs, safety stock and MOQs." },
@@ -14,6 +16,7 @@ const FEATURES = [
 
 export default async function LandingPage() {
   const session = await getSession();
+  const { kpis } = sampleWorkspace();
   return (
     <div className="min-h-screen bg-white">
       <header className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
@@ -61,10 +64,10 @@ export default async function LandingPage() {
 
         <div className="mt-16 grid gap-4 rounded-2xl border border-line bg-canvas p-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            ["$1.1M", "Inventory analysed", "Northstar sample workspace"],
-            ["26", "SKUs to reorder today", "with exact quantities"],
-            ["10", "Stockouts prevented", "before lead time runs out"],
-            ["$142K", "Excess capital found", "ready to release"],
+            [fmtCompactCurrency(kpis.totalInventory), "Inventory analysed", "Northstar sample workspace"],
+            [String(kpis.reorderRequired), "SKUs to reorder today", "with exact quantities"],
+            [String(kpis.stockoutRisks), "Stockouts caught early", "before lead time runs out"],
+            [fmtCompactCurrency(kpis.excessInventory), "Excess capital found", "ready to release"],
           ].map(([v, l, s]) => (
             <div key={l} className="rounded-xl bg-white p-5 ring-1 ring-line">
               <div className="tabular text-3xl font-semibold tracking-tight text-ink">{v}</div>

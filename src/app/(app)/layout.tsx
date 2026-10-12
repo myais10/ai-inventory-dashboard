@@ -13,8 +13,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const open = ws.recommendations.filter((r) => r.status === "new" || r.status === "in_review");
   const badges = {
     openRecs: open.filter((r) => r.priority === "high").length,
-    reorder: open.filter((r) => r.type === "reorder").length,
-    stockout: open.filter((r) => r.type === "stockout_risk").length,
+    reorder: ws.metrics.filter((m) => m.needsReorder).length,
+    stockout: ws.metrics.filter((m) => m.stockoutRisk === "high" || m.stockoutRisk === "medium").length,
   };
 
   const searchIndex: SearchItem[] = [

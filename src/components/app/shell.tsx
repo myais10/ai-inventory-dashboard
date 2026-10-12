@@ -16,9 +16,6 @@ export interface ShellProps extends HeaderProps {
   isSample: boolean;
 }
 
-function isActive(pathname: string, href: string) {
-  return pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
-}
 
 function SidebarNav({ collapsed, badges, onNavigate }: { collapsed: boolean; badges: Record<string, number>; onNavigate?: () => void }) {
   const pathname = usePathname();
@@ -141,7 +138,7 @@ export function AppShell({ children, badges, trialDaysRemaining, isSample, ...he
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "sticky top-0 hidden h-screen shrink-0 flex-col border-r border-line bg-[#f3f4f7] transition-[width] duration-200 lg:flex",
+          "sticky top-0 hidden h-screen print:hidden shrink-0 flex-col border-r border-line bg-[#f3f4f7] transition-[width] duration-200 lg:flex",
           collapsed ? "w-[60px]" : "w-[248px]",
         )}
       >
@@ -186,7 +183,7 @@ export function AppShell({ children, badges, trialDaysRemaining, isSample, ...he
             </button>
           }
         />
-        <div className="flex items-center justify-center gap-2 border-b border-brand-100 bg-brand-50/70 px-4 py-1.5 text-center text-xs text-brand-900">
+        <div className="flex items-center justify-center gap-2 border-b border-brand-100 print:hidden bg-brand-50/70 px-4 py-1.5 text-center text-xs text-brand-900">
           <span className="font-medium">7-day free trial · {trialDaysRemaining} {trialDaysRemaining === 1 ? "day" : "days"} remaining</span>
           {isSample && <span className="hidden text-brand-700/80 sm:inline">· Viewing sample data for Northstar Industrial Supply</span>}
           <Link href={isSample ? "/settings/data-sources" : "/settings/billing"} className="font-medium text-brand-700 underline-offset-2 hover:underline">

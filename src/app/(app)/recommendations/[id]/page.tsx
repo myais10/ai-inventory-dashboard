@@ -50,7 +50,7 @@ export default async function RecommendationDetailPage({ params }: { params: Pro
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card className="overflow-hidden">
             <div className="border-b border-brand-100 bg-brand-50/60 px-5 py-4">
               <div className="text-[11px] font-semibold uppercase tracking-wider text-brand-700">Recommended action</div>

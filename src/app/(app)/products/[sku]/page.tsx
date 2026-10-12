@@ -85,7 +85,7 @@ export default async function ProductPage({ params }: { params: Promise<{ sku: s
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[1fr_360px]">
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           {recs.map((r) => (
             <Card key={r.id} className="overflow-hidden">
               <div className="flex flex-col gap-3 border-l-4 border-l-brand-500 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -193,13 +193,13 @@ export default async function ProductPage({ params }: { params: Promise<{ sku: s
                   const late = po.receivedDate && po.receivedDate > po.expectedDate;
                   return (
                     <tr key={po.id}>
-                      <Td className="font-mono text-[12px] text-ink">{po.poNumber}</Td>
+                      <Td className="whitespace-nowrap font-mono text-[12px] text-ink">{po.poNumber}</Td>
                       <Td>
                         {overdue ? <Badge tone="red">Overdue</Badge> : po.status === "open" ? <Badge tone="brand">Open</Badge> : late ? <Badge tone="amber">Received late</Badge> : <Badge tone="green">Received</Badge>}
                       </Td>
-                      <Td className="tabular">{fmtDate(po.orderDate, true)}</Td>
-                      <Td className={cn("tabular", overdue && "font-medium text-red-600")}>{fmtDate(po.expectedDate, true)}</Td>
-                      <Td className="tabular">{fmtDate(po.receivedDate, true)}</Td>
+                      <Td className="tabular whitespace-nowrap">{fmtDate(po.orderDate, true)}</Td>
+                      <Td className={cn("tabular whitespace-nowrap", overdue && "font-medium text-red-600")}>{fmtDate(po.expectedDate, true)}</Td>
+                      <Td className="tabular whitespace-nowrap">{fmtDate(po.receivedDate, true)}</Td>
                       <Td align="right">{fmtNumber(line.qty)}</Td>
                       <Td align="right">{fmtCurrency(line.unitCost, true)}</Td>
                       <Td align="right">{po.receivedDate ? `${daysBetween(po.orderDate, po.receivedDate)}d` : "—"}</Td>
