@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
+    "build:static": "next build && node static-demo/build.mjs",
     "inspect": "tsx --tsconfig tsconfig.json src/scripts/inspect.ts"
   },
   "dependencies": {
@@ -30,6 +31,7 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild": "^0.25.10",
     "eslint": "^9",
     "eslint-config-next": "15.5.27",
     "tailwindcss": "^4",

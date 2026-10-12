@@ -1,5 +1,6 @@
 "use client";
 
+import { IS_STATIC_DEMO } from "@/lib/env";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -359,7 +360,7 @@ function ConnectData({
             <button type="button" onClick={loadSamples} className="inline-flex items-center gap-1 font-medium text-brand-600 hover:underline">
               <Copy className="h-3 w-3" /> Load Northstar sample files
             </button>
-            {["inventory", "sales", "purchase_orders", "enquiries"].map((n) => (
+            {!IS_STATIC_DEMO && ["inventory", "sales", "purchase_orders", "enquiries"].map((n) => (
               <a key={n} href={`/api/samples/${n}.csv`} className="inline-flex items-center gap-1 hover:text-ink">
                 <Download className="h-3 w-3" /> {n}.csv
               </a>

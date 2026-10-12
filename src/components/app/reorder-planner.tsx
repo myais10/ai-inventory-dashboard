@@ -1,5 +1,6 @@
 "use client";
 
+import { IS_STATIC_DEMO } from "@/lib/env";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { CheckCircle2, Download, FileText, X } from "lucide-react";
@@ -180,9 +181,11 @@ export function ReorderPlanner({ rows, canEdit }: { rows: ReorderRow[]; canEdit:
               ))}
             </div>
             <div className="flex justify-end gap-2 border-t border-line px-6 py-3">
+              {!IS_STATIC_DEMO && (
               <button type="button" onClick={download} className={buttonClass("secondary")}>
                 <Download className="h-4 w-4" /> Download CSV
               </button>
+              )}
               <button type="button" onClick={() => setCreated(true)} disabled={created} className={buttonClass("primary")}>
                 {created ? "Drafts created" : "Create drafts"}
               </button>

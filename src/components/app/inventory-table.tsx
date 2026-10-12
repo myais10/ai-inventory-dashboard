@@ -1,5 +1,6 @@
 "use client";
 
+import { IS_STATIC_DEMO } from "@/lib/env";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronLeft, ChevronRight, Download, Search, X } from "lucide-react";
@@ -163,9 +164,11 @@ export function InventoryTable({ rows, initialStatus }: { rows: InventoryRow[]; 
           <span className="text-xs text-muted">
             {filtered.length} SKUs · <span className="tabular font-medium text-ink">{fmtCurrency(totalValue)}</span>
           </span>
-          <button type="button" onClick={exportCsv} className={buttonClass("secondary", "sm")}>
-            <Download className="h-3.5 w-3.5" /> Export
-          </button>
+          {!IS_STATIC_DEMO && (
+            <button type="button" onClick={exportCsv} className={buttonClass("secondary", "sm")}>
+              <Download className="h-3.5 w-3.5" /> Export
+            </button>
+          )}
         </div>
       </div>
 

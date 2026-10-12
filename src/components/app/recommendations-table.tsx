@@ -1,5 +1,6 @@
 "use client";
 
+import { IS_STATIC_DEMO } from "@/lib/env";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowDownUp, ChevronLeft, ChevronRight, Download, ExternalLink, Search, X } from "lucide-react";
@@ -154,9 +155,11 @@ export function RecommendationsTable({ rows: initialRows, canEdit, initial, fixe
               </button>
             )}
           </div>
-          <button type="button" onClick={() => exportCsv(filtered)} className={buttonClass("secondary", "sm", "lg:ml-auto")}>
-            <Download className="h-3.5 w-3.5" /> Export
-          </button>
+          {!IS_STATIC_DEMO && (
+            <button type="button" onClick={() => exportCsv(filtered)} className={buttonClass("secondary", "sm", "lg:ml-auto")}>
+              <Download className="h-3.5 w-3.5" /> Export
+            </button>
+          )}
         </div>
 
         {filtered.length === 0 ? (
