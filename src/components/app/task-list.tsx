@@ -34,12 +34,13 @@ export function TaskItem({ t, tz, showLead, showAssignee }: { t: TaskItemData; t
   const [due, setDue] = useState(() => toLocalInput(t.dueAt, tz));
   const now = new Date();
   const overdue = !t.completedAt && t.dueAt < now;
-  const isCall = t.type === "callback" || t.type === "call" || t.type === "follow_up";
+  const isCall = t.type === "callback" || t.type === "call" || (t.type === "follow_up" && !t.dealName);
 
   const toggle = () =>
     start(async () => {
       const r = t.completedAt ? await reopenTaskAction(t.id) : await completeTaskAction(t.id);
-      if (!r.ok) toast("error", r.error);
+      if (r.ok) toast("success", t.completedAt ? "Task reopened" : "Task completed");
+      else toast("error", r.error);
     });
   const reschedule = () =>
     start(async () => {

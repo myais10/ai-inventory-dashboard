@@ -14,6 +14,7 @@ import { NewTaskButton, TaskItem } from "@/components/app/task-list";
 import { Badge } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { LeadActions, NoteComposer } from "./lead-client";
+import { CreateDealButton } from "../../pipeline/[id]/deal-client";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const session = await requireSession();
@@ -212,21 +213,28 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
             )}
           </Section>
 
-          {lead.deals.length > 0 && (
-            <Section title="Deals">
-              <ul className="divide-y divide-line/70">
-                {lead.deals.map(({ deal, stage }) => (
-                  <li key={deal.id} className="px-4 py-3">
-                    <Link href={`/pipeline/${deal.id}`} className="text-[13px] font-medium text-ink hover:text-brand-700 hover:underline">
-                      {deal.name}
-                    </Link>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-muted">
-                      <Badge tone={stage.kind === "won" ? "green" : stage.kind === "lost" ? "red" : "violet"}>{stage.name}</Badge>
-                      <span className="tabular">{fmtMoney(deal.value)}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+          {(lead.deals.length > 0 || (lead.canWork && !done)) && (
+            <Section
+              title="Deals"
+              action={lead.canWork && !done && !lead.deals.some((d) => d.stage.kind === "open") ? <CreateDealButton leadId={l.id} /> : undefined}
+            >
+              {lead.deals.length === 0 ? (
+                <p className="px-4 py-3 text-[13px] text-muted">Booking a meeting from the Calling Desk opens a deal automatically.</p>
+              ) : (
+                <ul className="divide-y divide-line/70">
+                  {lead.deals.map(({ deal, stage }) => (
+                    <li key={deal.id} className="px-4 py-3">
+                      <Link href={`/pipeline/${deal.id}`} className="text-[13px] font-medium text-ink hover:text-brand-700 hover:underline">
+                        {deal.name}
+                      </Link>
+                      <div className="mt-0.5 flex items-center gap-2 text-xs text-muted">
+                        <Badge tone={stage.kind === "won" ? "green" : stage.kind === "lost" ? "red" : "violet"}>{stage.name}</Badge>
+                        <span className="tabular">{fmtMoney(deal.value)}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </Section>
           )}
 

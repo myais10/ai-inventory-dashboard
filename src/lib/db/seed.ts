@@ -132,11 +132,11 @@ const STAGE_NEXT_STEPS: Record<string, string> = {
   Proposal: "Review proposal with decision maker",
   Negotiation: "Finalize contract terms",
 };
-const STAGE_TASKS: Record<string, string> = {
-  Discovery: "Send discovery recap to {first}",
-  Demo: "Prep tailored demo for {company}",
-  Proposal: "Send proposal to {company}",
-  Negotiation: "Follow up on contract redlines with {first}",
+const STAGE_TASKS: Record<string, { title: string; type: string }> = {
+  Discovery: { title: "Send discovery recap to {first}", type: "email" },
+  Demo: { title: "Prep tailored demo for {company}", type: "meeting_prep" },
+  Proposal: { title: "Send proposal to {company}", type: "email" },
+  Negotiation: { title: "Call {first} about contract redlines", type: "call" },
 };
 
 type Rng = ReturnType<typeof createRng>;
@@ -445,8 +445,8 @@ async function generateWorkspace(tx: Executor, orgId: string, repIds: string[], 
       const tt = STAGE_TASKS[stage.name];
       if (tt) {
         tasks.push({
-          id: randomUUID(), orgId, leadId: deal.leadId, dealId: deal.id, assigneeId: deal.ownerId, createdById: deal.ownerId, type: "follow_up",
-          title: fill(tt, { first: ct.firstName, company: co.name }), dueAt: addBusinessDays(at, 2, ORG_TZ), auto: false, createdAt: at,
+          id: randomUUID(), orgId, leadId: deal.leadId, dealId: deal.id, assigneeId: deal.ownerId, createdById: deal.ownerId, type: tt.type,
+          title: fill(tt.title, { first: ct.firstName, company: co.name }), dueAt: addBusinessDays(at, 2, ORG_TZ), auto: false, createdAt: at,
         });
       }
     }
