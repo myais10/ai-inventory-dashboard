@@ -1,5 +1,6 @@
 "use server";
 
+import { userMessage } from "@/lib/services/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
@@ -15,7 +16,7 @@ async function run(fn: () => Promise<string | void>): Promise<ActionResult> {
     revalidatePath("/", "layout");
     return { ok: true, message: message ?? undefined };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Something went wrong" };
+    return { ok: false, error: userMessage(e) };
   }
 }
 

@@ -8,4 +8,6 @@ export async function login(page: Page, email = "sam@brightline.demo", next?: st
   await page.getByLabel("Password").fill(PASSWORD);
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForURL((u) => !u.pathname.startsWith("/login"));
+  // Keyboard shortcuts attach on hydration.
+  await page.waitForLoadState("networkidle");
 }

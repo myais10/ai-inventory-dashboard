@@ -89,6 +89,8 @@ export function ShortcutsProvider({ children, nav }: { children: ReactNode; nav:
       if (e.defaultPrevented || e.isComposing) return;
       const name = keyName(e);
       const typing = isTyping(e.target);
+      // Enter/Space on a focused link or button must activate it, not a page shortcut.
+      if ((name === "enter" || name === " ") && (e.target as HTMLElement | null)?.closest?.("a,button,[role=button],[role=option],summary")) return;
       const all = [...Array.from(registry.current.values()).flat(), ...globals];
       const now = Date.now();
       const seq = pending.current && now - pending.current.at < 1200 ? `${pending.current.key} ${name}` : null;

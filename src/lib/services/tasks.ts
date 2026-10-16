@@ -1,5 +1,6 @@
 import "server-only";
 import { and, asc, eq, gt, isNotNull, isNull, lte, desc, type SQL } from "drizzle-orm";
+import { UserError } from "./errors";
 import { getDb, schema as s } from "@/lib/db";
 import { endOfToday } from "./badges";
 import { canWorkLead, isManagerRole, type Ctx } from "./context";
@@ -54,8 +55,8 @@ async function loadTask(ctx: Ctx, taskId: string) {
     .from(s.tasks)
     .leftJoin(s.leads, eq(s.leads.id, s.tasks.leadId))
     .where(and(eq(s.tasks.orgId, ctx.orgId), eq(s.tasks.id, taskId)));
-  if (!t) throw new Error("Task not found");
-  if (!isManagerRole(ctx.role) && t.task.assigneeId !== ctx.userId && !canWorkLead(ctx, t.leadOwner)) throw new Error("This task belongs to someone else");
+  if (!t) throw new UserError("Task not found");
+  if (!isManagerRole(ctx.role) && t.task.assigneeId !== ctx.userId && !canWorkLead(ctx, t.leadOwner)) throw new UserError("This task belongs to someone else");
   return t;
 }
 
@@ -101,11 +102,11 @@ export async function createTask(ctx: Ctx, input: { leadId?: string | null; deal
   const db = await getDb();
   if (input.leadId) {
     const [l] = await db.select({ id: s.leads.id }).from(s.leads).where(and(eq(s.leads.orgId, ctx.orgId), eq(s.leads.id, input.leadId)));
-    if (!l) throw new Error("Lead not found");
+    if (!l) throw new UserError("Lead not found");
   }
   if (input.dealId) {
     const [d] = await db.select({ id: s.deals.id }).from(s.deals).where(and(eq(s.deals.orgId, ctx.orgId), eq(s.deals.id, input.dealId)));
-    if (!d) throw new Error("Deal not found");
+    if (!d) throw new UserError("Deal not found");
   }
   const assigneeId = input.assigneeId && isManagerRole(ctx.role) ? input.assigneeId : ctx.userId;
   const [t] = await db

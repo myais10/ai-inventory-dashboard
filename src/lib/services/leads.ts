@@ -1,5 +1,6 @@
 import "server-only";
 import { and, asc, count, desc, eq, gte, ilike, inArray, isNull, lte, ne, notInArray, or, sql, type SQL } from "drizzle-orm";
+import { UserError } from "./errors";
 import { getDb, schema as s } from "@/lib/db";
 import type { LeadStatus } from "@/lib/domain/dispositions";
 import { LEAD_STATUS_MAP } from "@/lib/domain/dispositions";
@@ -212,7 +213,7 @@ export async function assignLeads(ctx: Ctx, leadIds: string[], ownerId: string |
         .from(s.memberships)
         .innerJoin(s.users, eq(s.users.id, s.memberships.userId))
         .where(and(eq(s.memberships.orgId, ctx.orgId), eq(s.memberships.userId, ownerId)));
-      if (!m) throw new Error("That user is not in this workspace");
+      if (!m) throw new UserError("That user is not in this workspace");
       ownerName = m.name;
     }
     const updated = await tx
@@ -253,8 +254,8 @@ export async function setLeadStatus(ctx: Ctx, leadId: string, status: LeadStatus
       .leftJoin(s.companies, eq(s.companies.id, s.leads.companyId))
       .innerJoin(s.organizations, eq(s.organizations.id, s.leads.orgId))
       .where(and(eq(s.leads.orgId, ctx.orgId), eq(s.leads.id, leadId)));
-    if (!cur) throw new Error("Lead not found");
-    if (!canWorkLead(ctx, cur.lead.ownerId)) throw new Error("This lead belongs to another rep");
+    if (!cur) throw new UserError("Lead not found");
+    if (!canWorkLead(ctx, cur.lead.ownerId)) throw new UserError("This lead belongs to another rep");
     if (cur.lead.status === status) return;
     const now = new Date();
     const next =
@@ -288,7 +289,7 @@ export async function setLeadStatus(ctx: Ctx, leadId: string, status: LeadStatus
 export async function addNote(ctx: Ctx, leadId: string, body: string) {
   const db = await getDb();
   const [lead] = await db.select({ companyId: s.leads.companyId }).from(s.leads).where(and(eq(s.leads.orgId, ctx.orgId), eq(s.leads.id, leadId)));
-  if (!lead) throw new Error("Lead not found");
+  if (!lead) throw new UserError("Lead not found");
   await db.insert(s.activities).values({ orgId: ctx.orgId, leadId, companyId: lead.companyId, userId: ctx.userId, type: "note", title: "Note", body });
 }
 
@@ -311,8 +312,8 @@ export async function updateContactForLead(ctx: Ctx, leadId: string, patch: Cont
       .from(s.leads)
       .innerJoin(s.contacts, eq(s.contacts.id, s.leads.contactId))
       .where(and(eq(s.leads.orgId, ctx.orgId), eq(s.leads.id, leadId)));
-    if (!cur) throw new Error("Lead not found");
-    if (!canWorkLead(ctx, cur.lead.ownerId)) throw new Error("This lead belongs to another rep");
+    if (!cur) throw new UserError("Lead not found");
+    if (!canWorkLead(ctx, cur.lead.ownerId)) throw new UserError("This lead belongs to another rep");
     const phoneChanged = (patch.phone !== undefined && patch.phone !== cur.contact.phone) || (patch.mobile !== undefined && patch.mobile !== cur.contact.mobile);
     const fixesPhone = phoneChanged && cur.contact.phoneInvalid;
     await tx

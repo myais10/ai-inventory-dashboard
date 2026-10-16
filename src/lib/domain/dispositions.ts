@@ -42,6 +42,7 @@ export const DISPOSITIONS: DispositionDef[] = [
 ];
 
 export const DISPOSITION_MAP = Object.fromEntries(DISPOSITIONS.map((d) => [d.key, d])) as Record<DispositionKey, DispositionDef>;
+export const CONNECTED_DISPOSITIONS = DISPOSITIONS.filter((d) => d.connected).map((d) => d.key);
 export const DISPOSITION_KEYS = DISPOSITIONS.map((d) => d.key) as [DispositionKey, ...DispositionKey[]];
 
 export const NOT_INTERESTED_REASONS = ["No need", "Using a competitor", "No budget", "Bad timing", "Too small", "Other"] as const;
