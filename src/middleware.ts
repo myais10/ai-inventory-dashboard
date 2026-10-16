@@ -2,9 +2,11 @@ import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, verifyToken } from "@/lib/auth/token";
 
 const PUBLIC_PATHS = ["/login", "/signup"];
+const ALWAYS_ALLOWED = ["/auth/signout"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  if (ALWAYS_ALLOWED.includes(pathname)) return NextResponse.next();
   // Signature check only; membership is re-validated against the database on every request.
   const authenticated = Boolean(await verifyToken(request.cookies.get(SESSION_COOKIE)?.value));
   const isPublic = PUBLIC_PATHS.includes(pathname);

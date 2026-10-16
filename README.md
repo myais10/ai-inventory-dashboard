@@ -47,6 +47,8 @@ npm run db:generate    # generate a migration after editing src/lib/db/schema.ts
    on first connection. Seed a demo workspace with `npm run db -- seed` if you want one.
 2. Set `AUTH_SECRET` to a long random string (required in production).
 3. Optional: `DATABASE_POOL_MAX` (default 10), provider selection (see below).
+4. Failed sign-ins are throttled per email and per client IP in server memory; run a shared store (e.g. Redis)
+   if you deploy more than one instance. The one-click demo seats only appear when the demo accounts exist.
 
 ## Keyboard
 

@@ -67,6 +67,7 @@ function CommandPalette({ open, onClose, isManager }: { open: boolean; onClose: 
             ref={inputRef}
             value={q}
             role="combobox"
+            aria-label="Search leads, companies and pages"
             aria-expanded="true"
             aria-controls="palette-list"
             aria-activedescendant={items[idx] ? `palette-${idx}` : undefined}

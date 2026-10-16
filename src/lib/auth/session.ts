@@ -45,7 +45,11 @@ export const getSession = cache(async (): Promise<Session | null> => {
 
 export async function requireSession(): Promise<Session> {
   const s = await getSession();
-  if (!s) redirect("/login");
+  if (!s) {
+    // A signed cookie with no membership behind it must be cleared, or middleware loops back here.
+    const hasCookie = Boolean((await cookies()).get(SESSION_COOKIE)?.value);
+    redirect(hasCookie ? "/auth/signout" : "/login");
+  }
   return s;
 }
 

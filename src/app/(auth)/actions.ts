@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
@@ -7,6 +8,7 @@ import { getDb, schema } from "@/lib/db";
 import { createDefaultStages, resetDemoData } from "@/lib/db/seed";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { endSession, startSession } from "@/lib/auth/session";
+import { clearFailures, isThrottled, recordFailure } from "@/lib/auth/throttle";
 
 export interface AuthState {
   error?: string;
@@ -28,9 +30,17 @@ function safeNext(next?: string) {
 export async function loginAction(_: AuthState, formData: FormData): Promise<AuthState> {
   const parsed = z.object({ email, password: z.string().min(1, "Enter your password"), next: z.string().optional() }).safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error) };
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip");
+  const keys = [`email:${parsed.data.email}`, ...(ip ? [`ip:${ip}`] : [])];
+  if (isThrottled(keys)) return { error: "Too many failed sign-in attempts. Try again in 15 minutes." };
   const db = await getDb();
   const [user] = await db.select().from(schema.users).where(eq(schema.users.email, parsed.data.email)).limit(1);
-  if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) return { error: "Incorrect email or password." };
+  if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
+    recordFailure(keys);
+    return { error: "Incorrect email or password." };
+  }
+  clearFailures([keys[0]]);
   const [m] = await db.select().from(schema.memberships).where(eq(schema.memberships.userId, user.id)).limit(1);
   if (!m) return { error: "Your account isn't a member of any workspace." };
   await startSession(user.id, m.orgId);

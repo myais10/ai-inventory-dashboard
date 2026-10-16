@@ -49,6 +49,7 @@ export interface EmailProvider extends ProviderInfo {
 
 export interface CallPrepInput {
   sellerName: string;
+  repName: string;
   contactName: string;
   title: string | null;
   companyName: string | null;

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { isManager, requireSession } from "@/lib/auth/session";
 import { ctxOf, listMembers } from "@/lib/services/context";
 import { listTasks, taskCounts, type TaskBucket } from "@/lib/services/tasks";

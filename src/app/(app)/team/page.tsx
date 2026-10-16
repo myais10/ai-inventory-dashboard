@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { AlertTriangle, CalendarClock, Inbox, TrendingDown } from "lucide-react";
 import { requireManager } from "@/lib/auth/session";
 import { SOURCES } from "@/lib/domain/scoring";

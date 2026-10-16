@@ -4,7 +4,7 @@
 // "?" lists everything currently active. Ignored while typing in inputs unless `allowInInput`.
 
 import { useRouter } from "next/navigation";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Dialog } from "@/components/ui/dialog";
 
 export interface Shortcut {
@@ -144,13 +144,25 @@ export function ShortcutsProvider({ children, nav }: { children: ReactNode; nav:
 }
 
 let seq = 0;
+/**
+ * Registers page shortcuts. `deps` controls which shortcuts exist (and what the help dialog lists);
+ * each handler always runs the latest closure, synced before paint, so a key pressed right after a
+ * state change never hits a stale handler.
+ */
 export function useShortcuts(shortcuts: Shortcut[], deps: unknown[] = []) {
   const ctx = useContext(ShortcutCtx);
   const id = useRef(`s${++seq}`);
+  const latest = useRef(shortcuts);
+  useLayoutEffect(() => {
+    latest.current = shortcuts;
+  });
   useEffect(() => {
     if (!ctx) return;
     const key = id.current;
-    ctx.register(key, shortcuts);
+    ctx.register(
+      key,
+      shortcuts.map((s) => ({ ...s, run: (e: KeyboardEvent) => (latest.current.find((x) => x.keys === s.keys) ?? s).run(e) })),
+    );
     return () => ctx.unregister(key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);

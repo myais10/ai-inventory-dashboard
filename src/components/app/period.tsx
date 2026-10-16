@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { PERIODS } from "@/lib/period";
 import { cn } from "@/lib/utils";
 

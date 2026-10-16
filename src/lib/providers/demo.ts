@@ -45,10 +45,10 @@ export const demoAI: AIProvider = {
     const techs = i.employeeCount ? Math.max(4, Math.round(i.employeeCount * 0.35)) : null;
     const opener =
       i.lastDisposition === "callback"
-        ? `Hi ${first}, it's [you] from ${i.sellerName} — you asked me to call back about dispatch scheduling. Still a good time?`
+        ? `Hi ${first}, it's ${i.repName} from ${i.sellerName} — you asked me to call back about dispatch scheduling. Still a good time?`
         : i.source === "inbound_demo"
-          ? `Hi ${first}, it's [you] from ${i.sellerName} — you just requested a demo. I wanted to learn what prompted it so we show you the right things.`
-          : `Hi ${first}, it's [you] from ${i.sellerName}. I work with ${i.industry ?? "field service"} teams in ${i.city ?? "your area"} — do you have 30 seconds for why I called?`;
+          ? `Hi ${first}, it's ${i.repName} from ${i.sellerName} — you just requested a demo. I wanted to learn what prompted it so we show you the right things.`
+          : `Hi ${first}, it's ${i.repName} from ${i.sellerName}. I work with ${i.industry ?? "field service"} teams in ${i.city ?? "your area"} — do you have 30 seconds for why I called?`;
     const points = [
       techs ? `~${techs} field techs at ${i.companyName} — ask how jobs get assigned today.` : `Ask how ${i.companyName ?? "they"} assign jobs today.`,
       i.title?.match(/owner|ceo|president|coo/i) ? "Decision maker — focus on revenue lost to scheduling gaps and admin time." : "Likely an operator — focus on daily dispatch pain and ask who signs off.",

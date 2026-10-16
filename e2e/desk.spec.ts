@@ -36,7 +36,9 @@ test("dial → hang up → no answer → saved to timeline, next lead loads", as
   await expect(page.getByText(/escalating cadence/)).toBeVisible();
   await page.keyboard.press("Enter");
   await expect(page.getByText(new RegExp(`${lead.name}: No answer`))).toBeVisible();
-  await expect.poll(async () => (await currentLead(page)).name).not.toBe(lead.name);
+  await page.waitForURL((u) => !u.search.includes(lead.href.split("/").pop()!));
+  await page.waitForLoadState("networkidle");
+  expect((await currentLead(page)).name).not.toBe(lead.name);
 
   await page.goto(lead.href);
   const activity = page.getByRole("region", { name: "Next action" });
@@ -80,6 +82,8 @@ test("skip moves to the next lead without logging", async ({ page }) => {
   await login(page, "elena@brightline.demo", "/desk");
   const lead = await currentLead(page);
   await page.keyboard.press("s");
-  await expect.poll(async () => (await currentLead(page)).name).not.toBe(lead.name);
+  await page.waitForURL(/skip=/);
+  await page.waitForLoadState("networkidle");
+  expect((await currentLead(page)).name).not.toBe(lead.name);
   await expect(page.getByText(/1 skipped/).last()).toBeVisible();
 });

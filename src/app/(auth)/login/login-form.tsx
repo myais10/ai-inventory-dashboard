@@ -11,12 +11,13 @@ interface DemoAccount {
   title: string;
 }
 
-export function LoginForm({ next, demo }: { next?: string; demo: { org: string; password: string; accounts: DemoAccount[] } }) {
+export function LoginForm({ next, demo }: { next?: string; demo: { org: string; password: string; accounts: DemoAccount[] } | null }) {
   const [state, action] = useActionState<AuthState, FormData>(loginAction, {});
   const formRef = useRef<HTMLFormElement>(null);
 
   const signInAs = (a: DemoAccount) => {
-    const f = formRef.current!;
+    const f = formRef.current;
+    if (!f || !demo) return;
     (f.elements.namedItem("email") as HTMLInputElement).value = a.email;
     (f.elements.namedItem("password") as HTMLInputElement).value = demo.password;
     f.requestSubmit();
@@ -35,6 +36,7 @@ export function LoginForm({ next, demo }: { next?: string; demo: { org: string; 
         </Field>
         <SubmitButton>Sign in</SubmitButton>
       </form>
+      {demo && (
       <section aria-labelledby="demo-h" className="mt-8 rounded-lg border border-line p-4">
         <h2 id="demo-h" className="text-[13px] font-semibold text-ink">
           Explore the demo workspace
@@ -54,6 +56,7 @@ export function LoginForm({ next, demo }: { next?: string; demo: { org: string; 
           ))}
         </div>
       </section>
+      )}
     </>
   );
 }

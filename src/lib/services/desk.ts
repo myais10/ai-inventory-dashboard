@@ -16,6 +16,7 @@ const queueColumns = {
   nextActionType: s.leads.nextActionType,
   nextActionReason: s.leads.nextActionReason,
   createdAt: s.leads.createdAt,
+  lastContactedAt: s.leads.lastContactedAt,
   ownerId: s.leads.ownerId,
   campaignId: s.leads.campaignId,
   timezone: s.contacts.timezone,
@@ -35,6 +36,7 @@ export type QueueLead = RankedLead<{
   nextActionType: string | null;
   nextActionReason: string | null;
   createdAt: Date;
+  lastContactedAt: Date | null;
   ownerId: string | null;
   campaignId: string | null;
   timezone: string;
@@ -71,7 +73,8 @@ export async function getQueue(ctx: Ctx, opts: { campaignId?: string; skip?: str
   const ranked = rankQueue(rows, now).map((r) => (r.lead.ownerId ? r : { ...r, reasons: ["Unassigned inbound — first to call claims it", ...r.reasons] }));
   const due = ranked.filter((r) => !skip.has(r.lead.id));
   const upcoming = rows
-    .filter((r) => r.nextActionAt && r.nextActionAt > now && !skip.has(r.id))
+    // Don't offer to "work ahead" on someone the rep dialled minutes ago.
+    .filter((r) => r.nextActionAt && r.nextActionAt > now && !skip.has(r.id) && !(r.lastContactedAt && now.getTime() - r.lastContactedAt.getTime() < 2 * 3_600_000))
     .sort((a, b) => a.nextActionAt!.getTime() - b.nextActionAt!.getTime())
     .slice(0, 12);
   return {

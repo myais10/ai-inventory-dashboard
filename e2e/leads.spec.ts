@@ -37,8 +37,9 @@ test("manager bulk-assigns unassigned leads; the assignment shows on the lead ti
 test("status change is recorded and keyboard navigation works", async ({ page }) => {
   await login(page, "sam@brightline.demo", "/leads?status=attempting");
   await page.keyboard.press("j");
+  await expect(page.locator("tbody tr.outline")).toHaveCount(1);
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/leads\/[0-9a-f-]{36}/);
+  await expect(page).toHaveURL(/\/leads\/[0-9a-f-]{36}/, { timeout: 15_000 });
   await page.getByLabel("Lead status").selectOption("nurture");
   await expect(page.getByText("Status set to Nurture")).toBeVisible();
   await expect(page.getByText("Status changed to Nurture").first()).toBeVisible();

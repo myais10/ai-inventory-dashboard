@@ -33,6 +33,7 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
         activeCall(ctx, lead.lead.id),
         providers.ai().callPrep({
           sellerName: session.org.name.split(" ")[0],
+          repName: session.user.firstName,
           contactName: `${lead.contact.firstName} ${lead.contact.lastName}`,
           title: lead.contact.title,
           companyName: lead.company?.name ?? null,

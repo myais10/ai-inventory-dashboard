@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { useState, useTransition } from "react";
 import { CalendarClock, Check, PhoneCall, Plus } from "lucide-react";
 import { completeTaskAction, createTaskAction, reopenTaskAction, rescheduleTaskAction } from "@/app/(app)/tasks/actions";

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { isManager, requireSession } from "@/lib/auth/session";
 import { LEAD_STATUSES, type LeadStatus } from "@/lib/domain/dispositions";
 import { SOURCES } from "@/lib/domain/scoring";

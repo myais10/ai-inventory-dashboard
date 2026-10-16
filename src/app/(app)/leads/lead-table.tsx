@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { PhoneCall, PhoneOff, Ban } from "lucide-react";
@@ -52,10 +52,12 @@ export function LeadTable({
   const [pending, start] = useTransition();
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
 
+  // Reset only when the visible rows actually change, not when a refresh re-sends the same data.
+  const rowKey = rows.map((r) => r.id).join(",");
   useEffect(() => {
     setSelected(new Set());
     setCursor(-1);
-  }, [rows]);
+  }, [rowKey]);
 
   useEffect(() => {
     if (cursor >= 0) rowRefs.current[cursor]?.scrollIntoView({ block: "nearest" });

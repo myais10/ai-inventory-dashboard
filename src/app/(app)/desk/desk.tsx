@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { AlertTriangle, ArrowRight, Ban, CalendarClock, Clock, Lightbulb, Loader2, Phone, PhoneCall, PhoneOff, SkipForward, Smartphone } from "lucide-react";

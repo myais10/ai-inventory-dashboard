@@ -56,10 +56,14 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   // Fill missing days so gaps read as zero, not as missing bars.
   const byDay = new Map(daily.map((d) => [d.day, d]));
   const days: { day: string; dials: number; meetings: number; weekend: boolean }[] = [];
-  for (let t = since.getTime(); t <= until.getTime(); t += 86_400_000) {
-    const day = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(new Date(t));
-    const wd = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short" }).format(new Date(t));
-    days.push({ day, dials: byDay.get(day)?.dials ?? 0, meetings: byDay.get(day)?.meetings ?? 0, weekend: wd === "Sat" || wd === "Sun" });
+  // Step by calendar day (noon UTC anchors) so DST changes can't duplicate or skip a day.
+  const first = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(since);
+  const last = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(until);
+  for (let t = Date.parse(`${first}T12:00:00Z`); ; t += 86_400_000) {
+    const day = new Date(t).toISOString().slice(0, 10);
+    if (day > last) break;
+    const wd = new Date(t).getUTCDay();
+    days.push({ day, dials: byDay.get(day)?.dials ?? 0, meetings: byDay.get(day)?.meetings ?? 0, weekend: wd === 0 || wd === 6 });
   }
   const dayLabel = (d: string) => new Intl.DateTimeFormat("en-US", { timeZone: "UTC", month: "short", day: "numeric" }).format(new Date(`${d}T00:00:00Z`));
 

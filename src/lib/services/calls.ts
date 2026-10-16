@@ -37,26 +37,33 @@ export async function startCall(ctx: Ctx, leadId: string, number: "phone" | "mob
     .set({ status: "abandoned", endedAt: new Date() })
     .where(and(eq(s.calls.orgId, ctx.orgId), eq(s.calls.userId, ctx.userId), inArray(s.calls.status, ["in_progress", "completed"]), isNull(s.calls.disposition)));
 
+  // Claim before dialing: if another rep claimed this unassigned lead a moment ago, don't call it.
+  if (!row.lead.ownerId) {
+    await db.transaction(async (tx) => {
+      const claimed = await tx
+        .update(s.leads)
+        .set({ ownerId: ctx.userId, updatedAt: new Date() })
+        .where(and(eq(s.leads.id, leadId), isNull(s.leads.ownerId)))
+        .returning({ id: s.leads.id });
+      if (!claimed.length) throw new UserError("Another rep just claimed this lead");
+      await tx.insert(s.activities).values({ orgId: ctx.orgId, leadId, companyId: row.lead.companyId, userId: ctx.userId, type: "assignment", title: "Claimed from the unassigned pool", meta: { ownerId: ctx.userId } });
+    });
+  }
+
   const callId = randomUUID();
   const phone = providers.phone();
   const placed = await phone.placeCall({ callId, to, fromUserId: ctx.userId });
   if (placed.status === "failed") throw new UserError(placed.error ?? "The call could not be placed");
-  await db.transaction(async (tx) => {
-    await tx.insert(s.calls).values({
-      id: callId,
-      orgId: ctx.orgId,
-      leadId,
-      userId: ctx.userId,
-      provider: phone.id,
-      providerCallId: placed.providerCallId,
-      toNumber: to,
-      status: "in_progress",
-      startedAt: new Date(),
-    });
-    if (!row.lead.ownerId) {
-      await tx.update(s.leads).set({ ownerId: ctx.userId, updatedAt: new Date() }).where(eq(s.leads.id, leadId));
-      await tx.insert(s.activities).values({ orgId: ctx.orgId, leadId, companyId: row.lead.companyId, userId: ctx.userId, type: "assignment", title: "Claimed from the unassigned pool", meta: { ownerId: ctx.userId } });
-    }
+  await db.insert(s.calls).values({
+    id: callId,
+    orgId: ctx.orgId,
+    leadId,
+    userId: ctx.userId,
+    provider: phone.id,
+    providerCallId: placed.providerCallId,
+    toNumber: to,
+    status: "in_progress",
+    startedAt: new Date(),
   });
   return { callId, startedAt: new Date(), provider: { id: phone.id, name: phone.name, live: phone.live } };
 }

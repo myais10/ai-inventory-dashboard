@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, gt, isNotNull, isNull, lte, desc, type SQL } from "drizzle-orm";
+import { and, asc, eq, gt, isNotNull, isNull, lte, desc, sql, type SQL } from "drizzle-orm";
 import { UserError } from "./errors";
 import { getDb, schema as s } from "@/lib/db";
 import { endOfToday } from "./badges";
@@ -42,10 +42,18 @@ export async function listTasks(ctx: Ctx, opts: { bucket: TaskBucket; assignee: 
 export type TaskRow = Awaited<ReturnType<typeof listTasks>>[number];
 
 export async function taskCounts(ctx: Ctx, assignee: string, tz: string) {
-  const [overdue, today, upcoming] = await Promise.all(
-    (["overdue", "today", "upcoming"] as const).map((bucket) => listTasks(ctx, { bucket, assignee, tz }).then((r) => r.length)),
-  );
-  return { overdue, today, upcoming };
+  const db = await getDb();
+  const now = new Date();
+  const eod = endOfToday(tz, now);
+  const [r] = await db
+    .select({
+      overdue: sql<number>`count(*) filter (where ${s.tasks.dueAt} <= ${now})::int`,
+      today: sql<number>`count(*) filter (where ${s.tasks.dueAt} > ${now} and ${s.tasks.dueAt} <= ${eod})::int`,
+      upcoming: sql<number>`count(*) filter (where ${s.tasks.dueAt} > ${eod})::int`,
+    })
+    .from(s.tasks)
+    .where(and(eq(s.tasks.orgId, ctx.orgId), isNull(s.tasks.completedAt), assignee === "all" ? undefined : eq(s.tasks.assigneeId, assignee === "me" ? ctx.userId : assignee)));
+  return r;
 }
 
 async function loadTask(ctx: Ctx, taskId: string) {

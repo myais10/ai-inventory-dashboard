@@ -1,8 +1,9 @@
 import "server-only";
-import { and, count, eq, isNull, lte, ne, notInArray, or } from "drizzle-orm";
+import { and, count, eq, isNull, lte, notInArray } from "drizzle-orm";
 import { getDb, schema as s } from "@/lib/db";
 import { zonedDate } from "@/lib/domain/time";
 import type { Ctx } from "./context";
+import { getQueue } from "./desk";
 
 export function endOfToday(tz: string, now = new Date()) {
   const [y, m, d] = new Intl.DateTimeFormat("en-CA", { timeZone: tz }).format(now).split("-").map(Number);
@@ -12,22 +13,9 @@ export function endOfToday(tz: string, now = new Date()) {
 export async function getBadges(ctx: Ctx, tz: string) {
   const db = await getDb();
   const now = new Date();
-  const [[queue], [tasks], [unassigned]] = await Promise.all([
-    db
-      .select({ n: count() })
-      .from(s.leads)
-      .innerJoin(s.contacts, eq(s.contacts.id, s.leads.contactId))
-      .where(
-        and(
-          eq(s.leads.orgId, ctx.orgId),
-          eq(s.leads.ownerId, ctx.userId),
-          ne(s.leads.nextActionType, "none"),
-          or(isNull(s.leads.nextActionAt), lte(s.leads.nextActionAt, now)),
-          notInArray(s.leads.status, ["unqualified", "converted"]),
-          eq(s.contacts.doNotCall, false),
-          eq(s.contacts.phoneInvalid, false),
-        ),
-      ),
+  const [queue, [tasks], [unassigned]] = await Promise.all([
+    // Same definition as the Calling Desk so the badge and the queue always agree.
+    getQueue(ctx),
     db
       .select({ n: count() })
       .from(s.tasks)
@@ -37,5 +25,5 @@ export async function getBadges(ctx: Ctx, tz: string) {
       .from(s.leads)
       .where(and(eq(s.leads.orgId, ctx.orgId), isNull(s.leads.ownerId), notInArray(s.leads.status, ["unqualified", "converted"]))),
   ]);
-  return { queue: queue.n, tasks: tasks.n, unassigned: unassigned.n };
+  return { queue: queue.due.length, tasks: tasks.n, unassigned: unassigned.n };
 }
