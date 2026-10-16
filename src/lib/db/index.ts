@@ -23,7 +23,7 @@ async function connect(): Promise<{ db: DB; close: () => Promise<void> }> {
     const { Pool } = await import("pg");
     const { drizzle } = await import("drizzle-orm/node-postgres");
     const { migrate } = await import("drizzle-orm/node-postgres/migrator");
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 10 });
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: Number(process.env.DATABASE_POOL_MAX) || 10 });
     const db = drizzle(pool, { schema });
     await migrate(db, { migrationsFolder: MIGRATIONS });
     return { db, close: () => pool.end() };

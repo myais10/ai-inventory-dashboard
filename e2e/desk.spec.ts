@@ -41,7 +41,7 @@ test("dial → hang up → no answer → saved to timeline, next lead loads", as
   await page.goto(lead.href);
   const activity = page.getByRole("region", { name: "Next action" });
   await expect(activity).toContainText(/Call \(attempt \d+\)/);
-  await expect(page.getByText("E2E: rang out, no voicemail box")).toBeVisible();
+  await expect(page.getByText("E2E: rang out, no voicemail box").first()).toBeVisible();
 });
 
 test("callback requested schedules a callback task and next action", async ({ page }) => {

@@ -44,7 +44,8 @@ export function rankLead<T extends QueueCandidate>(l: T, now: Date): RankedLead<
   } else if (l.attemptCount === 0) {
     if (INBOUND.has(l.source)) {
       const age = now.getTime() - l.createdAt.getTime();
-      p += 35;
+      // Speed to lead: contact rates fall off sharply after the first hour.
+      p += age < 3_600_000 ? 50 : age < 86_400_000 ? 35 : 20;
       reasons.push(`Inbound lead waiting ${ago(age)} — speed to lead matters`);
     } else {
       p += 8;

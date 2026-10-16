@@ -7,23 +7,23 @@ test("rep moves a deal forward from the board; stage change lands on the deal ti
   await expect(firstMove).toBeVisible();
   const dealLink = page.locator("li").filter({ has: firstMove }).getByRole("link").first();
   const company = (await dealLink.textContent())!.trim();
+  const href = (await dealLink.getAttribute("href"))!;
   const options = await firstMove.locator("option").allTextContents();
   const target = options.find((o) => o === "Proposal" || o === "Demo" || o === "Negotiation")!;
   await firstMove.selectOption({ label: target });
   await expect(page.getByText(`${company} → ${target}`)).toBeVisible();
-  await page.goto("/pipeline?owner=me");
-  await page.getByRole("link", { name: company }).first().click();
+  await page.goto(href);
   await expect(page.getByText(`Deal moved to ${target}`).first()).toBeVisible();
 });
 
 test("marking a deal lost requires a reason and closes it", async ({ page }) => {
   await login(page, "dana@brightline.demo", "/pipeline?owner=all");
-  await page.locator("section").filter({ hasText: "Meeting Booked" }).getByRole("link").first().click();
-  await expect(page).toHaveURL(/\/pipeline\/[0-9a-f-]{36}/);
+  const href = await page.getByRole("listitem", { name: /^Meeting Booked:/ }).getByRole("link").first().getAttribute("href");
+  await page.goto(href!);
   await page.getByRole("button", { name: "Mark lost" }).click();
   await expect(page.getByRole("dialog", { name: "Why was this deal lost?" })).toBeVisible();
   await page.getByRole("button", { name: "Went dark" }).click();
-  await expect(page.getByText("Moved to Closed Lost")).toBeVisible();
+  await expect(page.getByText("Moved to Closed Lost", { exact: true })).toBeVisible();
   await expect(page.getByText("Lost reason: Went dark").first()).toBeVisible();
 });
 
@@ -51,5 +51,5 @@ test("a callback logged on the desk appears in Tasks", async ({ page }) => {
   await page.keyboard.press("Enter");
   await expect(page.getByText(new RegExp(`${name}: Callback requested`))).toBeVisible();
   await page.goto("/tasks?bucket=upcoming");
-  await expect(page.getByText(`Call back ${name} (requested)`)).toBeVisible();
+  await expect(page.getByText(`Call back ${name} (requested)`).first()).toBeVisible();
 });
