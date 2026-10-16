@@ -101,7 +101,7 @@ export function Dot({ tone }: { tone: Tone }) {
 
 type BtnVariant = "primary" | "secondary" | "ghost" | "danger";
 const BTN: Record<BtnVariant, string> = {
-  primary: "bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus-visible:outline-brand-600",
+  primary: "bg-brand-700 text-white shadow-sm hover:bg-brand-900",
   secondary: "bg-white text-ink-2 ring-1 ring-inset ring-line-strong shadow-sm hover:bg-subtle",
   ghost: "text-ink-2 hover:bg-slate-100",
   danger: "bg-red-600 text-white hover:bg-red-700",

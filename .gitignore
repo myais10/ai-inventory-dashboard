@@ -42,4 +42,11 @@ yarn-error.log*
 next-env.d.ts
 
 # browser-only demo build output
-/static-demo/dist
+
+# embedded dev database
+/.data
+
+# local dev helpers
+/scripts/_*
+/test-results
+/playwright-report

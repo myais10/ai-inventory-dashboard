@@ -2,102 +2,74 @@ import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import type { Role, TrialStatus } from "@/lib/types";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { daysBetween, todayISO } from "@/lib/utils";
-import { DEMO_COOKIE, signSession, verifySession, type DemoSessionPayload } from "./demo-session";
+import { and, eq } from "drizzle-orm";
+import { getDb, schema } from "@/lib/db";
+import { SESSION_COOKIE, SESSION_TTL_MS, signToken, verifyToken } from "./token";
 
-export interface AppSession {
-  mode: "demo" | "supabase";
-  user: { id: string; email: string; fullName: string; firstName: string };
+export type Role = "owner" | "manager" | "rep";
+
+export interface Session {
+  user: { id: string; email: string; name: string; firstName: string };
+  org: { id: string; name: string; timezone: string; icpIndustries: string[]; icpMinEmployees: number; icpMaxEmployees: number };
   role: Role;
-  company: {
-    id: string;
-    name: string;
-    industry: string;
-    trialStart: string;
-    trialEnd: string;
-    trialStatus: TrialStatus;
-    trialDaysRemaining: number;
-    dataSource: "sample" | "import";
-  } | null;
-  onboarded: boolean;
+  title: string | null;
 }
 
-function trial(trialStart: string, trialEnd: string) {
-  const remaining = Math.max(0, daysBetween(todayISO(), trialEnd));
-  return { trialStart, trialEnd, trialDaysRemaining: remaining, trialStatus: (remaining > 0 ? "active" : "expired") as TrialStatus };
-}
-
-export const getSession = cache(async (): Promise<AppSession | null> => {
-  if (!isSupabaseConfigured()) {
-    const store = await cookies();
-    const p = await verifySession(store.get(DEMO_COOKIE)?.value);
-    if (!p) return null;
-    return {
-      mode: "demo",
-      user: { id: p.userId, email: p.email, fullName: p.fullName, firstName: p.fullName.split(" ")[0] },
-      role: p.role,
-      company: { id: p.companyId, name: p.companyName, industry: p.industry, dataSource: p.dataSource, ...trial(p.trialStart, p.trialEnd) },
-      onboarded: p.onboarded,
-    };
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
-  const { data: membership } = await supabase
-    .from("memberships")
-    .select("role, companies(id, name, industry, trial_start, trial_end, onboarding_completed, data_source)")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  const fullName = (profile?.full_name as string | undefined) || (user.user_metadata?.full_name as string | undefined) || user.email!.split("@")[0];
-  const c = (membership?.companies ?? null) as unknown as {
-    id: string; name: string; industry: string | null; trial_start: string; trial_end: string; onboarding_completed: boolean; data_source: "sample" | "import";
-  } | null;
+export const getSession = cache(async (): Promise<Session | null> => {
+  const store = await cookies();
+  const tok = await verifyToken(store.get(SESSION_COOKIE)?.value);
+  if (!tok) return null;
+  const db = await getDb();
+  const [row] = await db
+    .select({ user: schema.users, org: schema.organizations, role: schema.memberships.role, title: schema.memberships.title })
+    .from(schema.memberships)
+    .innerJoin(schema.users, eq(schema.users.id, schema.memberships.userId))
+    .innerJoin(schema.organizations, eq(schema.organizations.id, schema.memberships.orgId))
+    .where(and(eq(schema.memberships.userId, tok.uid), eq(schema.memberships.orgId, tok.oid)))
+    .limit(1);
+  if (!row) return null;
   return {
-    mode: "supabase",
-    user: { id: user.id, email: user.email!, fullName, firstName: fullName.split(" ")[0] },
-    role: (membership?.role as Role) ?? "viewer",
-    company: c
-      ? { id: c.id, name: c.name, industry: c.industry ?? "", dataSource: c.data_source ?? "sample", ...trial(c.trial_start.slice(0, 10), c.trial_end.slice(0, 10)) }
-      : null,
-    onboarded: Boolean(c?.onboarding_completed),
+    user: { id: row.user.id, email: row.user.email, name: row.user.name, firstName: row.user.name.split(" ")[0] },
+    org: {
+      id: row.org.id,
+      name: row.org.name,
+      timezone: row.org.timezone,
+      icpIndustries: row.org.icpIndustries,
+      icpMinEmployees: row.org.icpMinEmployees,
+      icpMaxEmployees: row.org.icpMaxEmployees,
+    },
+    role: row.role,
+    title: row.title,
   };
 });
 
-/** Use in protected server components/actions. Redirects unauthenticated users to login. */
-export async function requireSession(opts: { allowIncompleteOnboarding?: boolean } = {}): Promise<AppSession & { company: NonNullable<AppSession["company"]> }> {
-  const session = await getSession();
-  if (!session) redirect("/login");
-  if (!session.company || (!session.onboarded && !opts.allowIncompleteOnboarding)) redirect("/onboarding");
-  return session as AppSession & { company: NonNullable<AppSession["company"]> };
+export async function requireSession(): Promise<Session> {
+  const s = await getSession();
+  if (!s) redirect("/login");
+  return s;
 }
 
-// ---------- Demo-mode session writes ----------
+export function isManager(s: Pick<Session, "role">) {
+  return s.role === "owner" || s.role === "manager";
+}
 
-export async function writeDemoSession(payload: Omit<DemoSessionPayload, "iat">) {
+export async function requireManager(): Promise<Session> {
+  const s = await requireSession();
+  if (!isManager(s)) redirect("/desk");
+  return s;
+}
+
+export async function startSession(uid: string, oid: string) {
   const store = await cookies();
-  store.set(DEMO_COOKIE, await signSession({ ...payload, iat: Date.now() }), {
+  store.set(SESSION_COOKIE, await signToken({ uid, oid, iat: Date.now() }), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 14 * 86_400,
+    maxAge: SESSION_TTL_MS / 1000,
   });
 }
 
-export async function readDemoSessionPayload() {
-  const store = await cookies();
-  return verifySession(store.get(DEMO_COOKIE)?.value);
-}
-
-export async function clearDemoSession() {
-  const store = await cookies();
-  store.delete(DEMO_COOKIE);
+export async function endSession() {
+  (await cookies()).delete(SESSION_COOKIE);
 }

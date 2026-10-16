@@ -6,8 +6,8 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const mono = JetBrains_Mono({ variable: "--font-jbmono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: { default: "AI Inventory & Demand Intelligence", template: "%s · Inventory Intelligence" },
-  description: "Your ERP tells you what you have. We tell you what to do about it.",
+  title: { default: "Phoonica", template: "%s · Phoonica" },
+  description: "The calling-first sales workspace: find the right lead, call, log, follow up, close.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

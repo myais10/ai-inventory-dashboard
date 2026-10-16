@@ -14,13 +14,19 @@
   --color-muted: #64748b;
   --color-faint: #94a3b8;
 
-  --color-brand-50: #eef3ff;
-  --color-brand-100: #dbe5ff;
-  --color-brand-200: #bccfff;
-  --color-brand-500: #3b63f0;
-  --color-brand-600: #2c4fd8;
-  --color-brand-700: #2341b0;
-  --color-brand-900: #142463;
+  /* Phoonica signal teal */
+  --color-brand-50: #edfcf8;
+  --color-brand-100: #d0f6ec;
+  --color-brand-200: #a2ecda;
+  --color-brand-300: #67dbc3;
+  --color-brand-500: #14b39a;
+  --color-brand-600: #0b927e;
+  --color-brand-700: #0c7466;
+  --color-brand-900: #0d3d37;
+
+  --color-night: #0c1117;
+  --color-night-2: #151c25;
+  --color-night-3: #232d3a;
 }
 
 html {
@@ -46,6 +52,19 @@ body {
 .scroll-thin::-webkit-scrollbar-thumb {
   background: #d1d5db;
   border-radius: 8px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-500);
+  outline-offset: 2px;
+}
+
+kbd {
+  font-family: var(--font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 
 @keyframes fade-in {
