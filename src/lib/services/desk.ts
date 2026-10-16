@@ -71,7 +71,7 @@ export async function getQueue(ctx: Ctx, opts: { campaignId?: string; skip?: str
   const ranked = rankQueue(rows, now).map((r) => (r.lead.ownerId ? r : { ...r, reasons: ["Unassigned inbound — first to call claims it", ...r.reasons] }));
   const due = ranked.filter((r) => !skip.has(r.lead.id));
   const upcoming = rows
-    .filter((r) => r.nextActionAt && r.nextActionAt > now)
+    .filter((r) => r.nextActionAt && r.nextActionAt > now && !skip.has(r.id))
     .sort((a, b) => a.nextActionAt!.getTime() - b.nextActionAt!.getTime())
     .slice(0, 12);
   return {

@@ -17,7 +17,7 @@ async function currentLead(page: Page) {
 async function openInDesk(page: Page, listUrl: string, row = 0) {
   await page.goto(listUrl);
   await page.locator("tbody tr").nth(row).locator("a").first().click();
-  await page.getByRole("main").getByRole("link", { name: /^Call\b/ }).click();
+  await page.getByRole("main").getByRole("link", { name: "Call C", exact: true }).click();
   await expect(page).toHaveURL(/\/desk\?lead=/);
   await page.waitForLoadState("networkidle");
   return currentLead(page);

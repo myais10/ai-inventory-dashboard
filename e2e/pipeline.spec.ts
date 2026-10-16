@@ -42,7 +42,7 @@ test("a callback logged on the desk appears in Tasks", async ({ page }) => {
   const row = page.locator("tbody tr").nth(2);
   const name = (await row.locator("a").first().textContent())!.trim();
   await row.locator("a").first().click();
-  await page.getByRole("main").getByRole("link", { name: /^Call\b/ }).click();
+  await page.getByRole("main").getByRole("link", { name: "Call C", exact: true }).click();
   await expect(page).toHaveURL(/\/desk\?lead=/);
   await page.waitForLoadState("networkidle");
   await expect(page.getByText("Why this lead now")).toBeVisible();
