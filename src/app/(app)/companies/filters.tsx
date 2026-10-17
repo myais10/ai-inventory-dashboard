@@ -33,13 +33,18 @@ export function CompanyFilters({ q, industry, industries }: { q: string; industr
           value={term}
           onChange={(e) => setTerm(e.target.value)}
           placeholder="Company, city or domain…"
-          className="h-8 w-full rounded-md border border-line-strong bg-white pl-8 pr-2 text-[13px] outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          className="h-8 w-full rounded-md border border-line-strong bg-subtle text-ink pl-8 pr-2 text-[13px] outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25"
         />
       </div>
       <label htmlFor="co-industry" className="sr-only">
         Industry
       </label>
-      <select id="co-industry" value={industry} onChange={(e) => go({ industry: e.target.value })} className="h-8 rounded-md border border-line-strong bg-white px-2 text-[13px]">
+      <select
+        id="co-industry"
+        value={industry}
+        onChange={(e) => go({ industry: e.target.value })}
+        className="h-8 rounded-md border border-line-strong bg-subtle px-2 text-[13px] text-ink"
+      >
         <option value="">All industries</option>
         {industries.map((i) => (
           <option key={i} value={i}>

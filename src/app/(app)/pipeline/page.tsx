@@ -3,6 +3,7 @@ import { isManager, requireSession } from "@/lib/auth/session";
 import { ctxOf, listMembers } from "@/lib/services/context";
 import { pipelineBoard, pipelineSummary } from "@/lib/services/deals";
 import { fmtMoney, fmtPct } from "@/lib/format";
+import { Metric, PageHeader } from "@/components/ui";
 import { Board } from "./board";
 import { OwnerFilter } from "./owner-filter";
 
@@ -18,27 +19,23 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
   const closed = summary.won90 + summary.lost90;
 
   return (
-    <div className="flex min-h-screen flex-col px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-ink">Pipeline</h1>
-          <p className="mt-0.5 text-sm text-muted">Deals open automatically when a meeting is booked. Drag a card, or use its “Move to” menu.</p>
-        </div>
-        <OwnerFilter value={owner} members={members.map((m) => ({ id: m.id, name: m.name }))} />
-      </div>
+    <div className="flex flex-col px-4 py-5 sm:px-6">
+      <PageHeader
+        title="Pipeline"
+        description="Deals open automatically when a meeting is booked. Drag a card, or use its “Move to” menu."
+        actions={<OwnerFilter value={owner} members={members.map((m) => ({ id: m.id, name: m.name }))} />}
+        className="mb-4"
+      />
       <dl className="mb-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-4">
-        {[
-          { k: "Open pipeline", v: fmtMoney(summary.openValue), sub: `${summary.openCount} deals` },
-          { k: "Weighted forecast", v: fmtMoney(summary.weighted), sub: "value × stage probability" },
-          { k: "Won · last 90 days", v: fmtMoney(summary.wonValue90), sub: closed ? `${fmtPct(summary.won90 / closed)} win rate (${summary.won90}/${closed})` : "no closed deals yet" },
-          { k: "Stalled", v: String(summary.stale), sub: "open deals with no stage change in 14+ days", warn: summary.stale > 0 },
-        ].map((x) => (
-          <div key={x.k} className="bg-white px-4 py-3">
-            <dt className="text-xs text-muted">{x.k}</dt>
-            <dd className={`tabular mt-0.5 text-lg font-semibold ${x.warn ? "text-amber-700" : "text-ink"}`}>{x.v}</dd>
-            <dd className="text-[11px] text-faint">{x.sub}</dd>
-          </div>
-        ))}
+        <Metric className="bg-surface px-4 py-3" label="Open pipeline" value={fmtMoney(summary.openValue)} sub={`${summary.openCount} open deals`} />
+        <Metric className="bg-surface px-4 py-3" label="Weighted forecast" value={fmtMoney(summary.weighted)} sub="value × stage probability" />
+        <Metric
+          className="bg-surface px-4 py-3"
+          label="Won · last 90 days"
+          value={fmtMoney(summary.wonValue90)}
+          sub={closed ? `${fmtPct(summary.won90 / closed)} win rate (${summary.won90} of ${closed} closed)` : "no closed deals yet"}
+        />
+        <Metric className="bg-surface px-4 py-3" label="Stalled 14+ days" value={String(summary.stale)} sub="open deals without a stage change" tone={summary.stale > 0 ? "warn" : undefined} />
       </dl>
       <Board
         stages={board.stages}
@@ -55,6 +52,7 @@ export default async function PipelinePage({ searchParams }: { searchParams: Pro
           nextStep: d.deal.nextStep,
           nextMeetingAt: d.nextMeetingAt ? new Date(d.nextMeetingAt).toISOString() : null,
           overdueTasks: d.overdueTasks ?? 0,
+          lastActivityAt: d.lastActivityAt ? new Date(d.lastActivityAt).toISOString() : null,
           closedAt: d.deal.closedAt?.toISOString() ?? null,
           lostReason: d.deal.lostReason,
         }))}

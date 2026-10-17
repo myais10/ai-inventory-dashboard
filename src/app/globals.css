@@ -1,32 +1,55 @@
 @import "tailwindcss";
 
+/*
+ * Phoonica design tokens — taken from the Phoonica Design Kit.
+ * Palette: Background #0A0B0F · Surface #11131A · Border #1F2430 · Text #F9FAFB / #94A3B8
+ *          Primary #7C3AED · Primary dark #5B21B6 · Secondary #A78BFA · Accent #22D3EE
+ *          Success #10B981 · Warning #F59E0B · Error #EF4444
+ * Type: Inter. Radius: 4 / 8 / 12 / 16. Two shadows: soft (cards) and elevated (popovers).
+ * Semantic names (canvas, surface, ink…) are kept so components read by role, not by hex.
+ */
 @theme inline {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jbmono), ui-monospace, SFMono-Regular, monospace;
 
-  --color-canvas: #f6f7f9;
-  --color-surface: #ffffff;
-  --color-subtle: #f9fafb;
-  --color-line: #e5e7eb;
-  --color-line-strong: #d1d5db;
-  --color-ink: #0b1220;
-  --color-ink-2: #334155;
-  --color-muted: #64748b;
-  --color-faint: #94a3b8;
+  --color-canvas: #0a0b0f; /* Background */
+  --color-surface: #11131a; /* Surface: cards, sidebar, tables */
+  --color-subtle: #161922; /* Raised surface: hover, inputs, table header */
+  --color-line: #1f2430; /* Border */
+  --color-line-strong: #2b3242; /* Border on hover / inputs */
+  --color-ink: #f9fafb; /* Text primary */
+  --color-ink-2: #cbd5e1; /* Body copy on dark */
+  --color-muted: #94a3b8; /* Text secondary */
+  --color-faint: #64748b; /* Metadata, placeholders */
 
-  /* Phoonica signal teal */
-  --color-brand-50: #edfcf8;
-  --color-brand-100: #d0f6ec;
-  --color-brand-200: #a2ecda;
-  --color-brand-300: #67dbc3;
-  --color-brand-500: #14b39a;
-  --color-brand-600: #0b927e;
-  --color-brand-700: #0c7466;
-  --color-brand-900: #0d3d37;
+  /* Primary purple. 50–100 are dark tints for selected/active backgrounds; 200–300 are light tints for text. */
+  --color-brand-50: #1a1530;
+  --color-brand-100: #241a45;
+  --color-brand-200: #c4b5fd;
+  --color-brand-300: #a78bfa; /* Secondary */
+  --color-brand-400: #8b5cf6;
+  --color-brand-500: #7c3aed; /* Primary */
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9; /* Primary hover */
+  --color-brand-800: #5b21b6; /* Primary dark */
+  --color-brand-900: #4c1d95;
 
-  --color-night: #0c1117;
-  --color-night-2: #151c25;
-  --color-night-3: #232d3a;
+  --color-accent: #22d3ee;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-elevated: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 0 0 1px rgb(124 58 237 / 0.12);
+}
+
+:root {
+  color-scheme: dark;
 }
 
 html {
@@ -40,22 +63,16 @@ body {
   font-feature-settings: "cv11", "ss01";
 }
 
+::selection {
+  background: rgb(124 58 237 / 0.45);
+}
+
 .tabular {
   font-variant-numeric: tabular-nums;
 }
 
-/* Thin scrollbars for dense tables */
-.scroll-thin::-webkit-scrollbar {
-  height: 8px;
-  width: 8px;
-}
-.scroll-thin::-webkit-scrollbar-thumb {
-  background: #d1d5db;
-  border-radius: 8px;
-}
-
 :focus-visible {
-  outline: 2px solid var(--color-brand-500);
+  outline: 2px solid var(--color-brand-400);
   outline-offset: 2px;
 }
 
@@ -63,22 +80,73 @@ kbd {
   font-family: var(--font-mono);
 }
 
+/* Thin, dark scrollbars for dense lists */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2b3242 transparent;
+}
+::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #2b3242;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .animate-fade-in {
-  animation: fade-in 0.25s ease-out both;
+  animation: fade-in 0.18s ease-out both;
 }
 
-@keyframes slide-in-right {
-  from { transform: translateX(100%); }
-  to { transform: none; }
+/* Call-connecting pulse: the only ambient motion in the product. */
+@keyframes live-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgb(239 68 68 / 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgb(239 68 68 / 0);
+  }
 }
-.animate-slide-in {
-  animation: slide-in-right 0.22s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+.animate-live {
+  animation: live-ring 1.6s ease-out infinite;
+}
+
+/* Brief highlight when something was just saved/moved. */
+@keyframes flash {
+  from {
+    background-color: rgb(124 58 237 / 0.18);
+  }
+  to {
+    background-color: transparent;
+  }
+}
+.animate-flash {
+  animation: flash 0.9s ease-out both;
 }

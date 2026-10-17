@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import Link from "@/components/ui/link";
 import { isManager, requireSession } from "@/lib/auth/session";
 import { ctxOf, listMembers } from "@/lib/services/context";
 import { listTasks, taskCounts, type TaskBucket } from "@/lib/services/tasks";
 import { NewTaskButton, TaskItem } from "@/components/app/task-list";
-import { cn } from "@/lib/utils";
+import { CheckCheck } from "lucide-react";
+import { EmptyState, PageHeader, Tabs } from "@/components/ui";
 import { AssigneeFilter } from "./assignee-filter";
 
 export const metadata: Metadata = { title: "Tasks" };
@@ -30,36 +30,27 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   const href = (b: TaskBucket) => `/tasks?bucket=${b}${assignee !== "me" ? `&assignee=${assignee}` : ""}`;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-ink">Tasks</h1>
-          <p className="mt-0.5 text-sm text-muted">Callbacks and follow-ups are created automatically from call outcomes. Calling a lead closes its open follow-ups.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {manager && <AssigneeFilter value={assignee} members={members.map((m) => ({ id: m.id, name: m.name }))} />}
-          <NewTaskButton tz={tz} size="md" members={manager ? members.map((m) => ({ id: m.id, name: m.name })) : undefined} />
-        </div>
+    <div className="max-w-5xl px-4 py-5 sm:px-6">
+      <PageHeader
+        title="Tasks"
+        description="Callbacks and follow-ups are created automatically from call outcomes. Calling a lead closes its open follow-ups."
+        className="mb-3"
+        actions={
+          <>
+            {manager && <AssigneeFilter value={assignee} members={members.map((m) => ({ id: m.id, name: m.name }))} />}
+            <NewTaskButton tz={tz} size="md" members={manager ? members.map((m) => ({ id: m.id, name: m.name })) : undefined} />
+          </>
+        }
+      />
+      <div className="mb-3">
+        <Tabs
+          label="Task buckets"
+          tabs={BUCKETS.map((b) => ({ href: href(b.key), label: b.label, active: b.key === bucket, count: b.key === "done" ? undefined : counts[b.key], tone: b.key === "overdue" ? ("red" as const) : undefined }))}
+        />
       </div>
-      <nav aria-label="Task buckets" className="mb-3 flex gap-1 border-b border-line">
-        {BUCKETS.map((b) => {
-          const n = b.key === "done" ? null : counts[b.key];
-          return (
-            <Link
-              key={b.key}
-              href={href(b.key)}
-              aria-current={b.key === bucket ? "page" : undefined}
-              className={cn("-mb-px flex items-center gap-1.5 border-b-2 px-3 py-2 text-[13px] font-medium", b.key === bucket ? "border-brand-600 text-ink" : "border-transparent text-muted hover:text-ink")}
-            >
-              {b.label}
-              {n !== null && n > 0 && <span className={cn("tabular rounded-full px-1.5 text-[11px]", b.key === "overdue" ? "bg-red-50 text-red-700" : "bg-slate-100 text-muted")}>{n}</span>}
-            </Link>
-          );
-        })}
-      </nav>
-      <div className="overflow-hidden rounded-lg border border-line bg-white">
+      <div className="overflow-hidden rounded-lg border border-line bg-surface shadow-card">
         {rows.length === 0 ? (
-          <p className="px-6 py-14 text-center text-sm text-muted">{meta.empty}</p>
+          <EmptyState icon={CheckCheck} title={meta.empty} />
         ) : (
           <ul className="divide-y divide-line/70">
             {rows.map((r) => (

@@ -1,5 +1,6 @@
 import Link from "@/components/ui/link";
 import type { ComponentProps, ReactNode } from "react";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ---------- Layout ----------
@@ -8,159 +9,214 @@ export function PageHeader({
   title,
   description,
   actions,
-  eyebrow,
+  crumbs,
+  className,
 }: {
   title: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
-  eyebrow?: ReactNode;
+  crumbs?: { label: string; href?: string }[];
+  className?: string;
 }) {
   return (
-    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <header className={cn("mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between", className)}>
       <div className="min-w-0">
-        {eyebrow && <div className="mb-1 text-xs font-medium uppercase tracking-wider text-muted">{eyebrow}</div>}
-        <h1 className="text-[22px] font-semibold tracking-tight text-ink">{title}</h1>
-        {description && <p className="mt-1 text-sm text-muted">{description}</p>}
+        {crumbs && (
+          <nav aria-label="Breadcrumb" className="mb-1.5">
+            <ol className="flex items-center gap-1.5 text-xs text-faint">
+              {crumbs.map((c, i) => (
+                <li key={c.label} className="flex items-center gap-1.5">
+                  {i > 0 && <span aria-hidden>/</span>}
+                  {c.href ? (
+                    <Link href={c.href} className="hover:text-ink">
+                      {c.label}
+                    </Link>
+                  ) : (
+                    <span aria-current="page" className="text-muted">
+                      {c.label}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
+        <h1 className="text-[22px] font-semibold leading-[30px] tracking-tight text-ink">{title}</h1>
+        {description && <p className="mt-0.5 text-sm text-muted">{description}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
-    </div>
+    </header>
   );
 }
 
 export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("min-w-0 rounded-xl border border-line bg-surface shadow-[0_1px_2px_rgba(16,24,40,0.04)]", className)} {...props} />;
+  return <div className={cn("min-w-0 rounded-lg border border-line bg-surface shadow-card", className)} {...props} />;
 }
 
-export function CardHeader({
-  title,
-  description,
-  actions,
-  className,
-  icon,
-}: {
-  title: ReactNode;
-  description?: ReactNode;
-  actions?: ReactNode;
-  className?: string;
-  icon?: ReactNode;
-}) {
+/** Small bordered icon tile, as used on kit cards and the icon grid. */
+export function IconTile({ icon: Icon, className, tone = "default" }: { icon: LucideIcon; className?: string; tone?: "default" | "brand" }) {
   return (
-    <div className={cn("flex items-start justify-between gap-3 border-b border-line px-5 py-3.5", className)}>
-      <div className="flex min-w-0 items-start gap-2.5">
-        {icon && <div className="mt-0.5 text-muted">{icon}</div>}
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-ink">{title}</h2>
-          {description && <p className="mt-0.5 text-xs text-muted">{description}</p>}
-        </div>
-      </div>
-      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
-    </div>
+    <span
+      className={cn(
+        "flex h-7 w-7 shrink-0 items-center justify-center rounded-md border",
+        tone === "brand" ? "border-brand-500/30 bg-brand-50 text-brand-300" : "border-line bg-subtle text-muted",
+        className,
+      )}
+      aria-hidden
+    >
+      <Icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+    </span>
   );
 }
 
-// ---------- Badges ----------
+/** A titled section: compact header row + content. The standard container for page sections. */
+export function Panel({
+  title,
+  icon,
+  description,
+  actions,
+  children,
+  className,
+  bodyClassName,
+  id,
+}: {
+  title: ReactNode;
+  icon?: LucideIcon;
+  description?: ReactNode;
+  actions?: ReactNode;
+  children: ReactNode;
+  className?: string;
+  bodyClassName?: string;
+  id?: string;
+}) {
+  return (
+    <section id={id} className={cn("min-w-0 rounded-lg border border-line bg-surface shadow-card", className)}>
+      <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
+        <div className="flex min-w-0 items-center gap-2.5">
+          {icon && <IconTile icon={icon} />}
+          <div className="min-w-0">
+            <h2 className="truncate text-[13px] font-semibold text-ink">{title}</h2>
+            {description && <p className="truncate text-xs text-faint">{description}</p>}
+          </div>
+        </div>
+        {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+      </header>
+      <div className={bodyClassName}>{children}</div>
+    </section>
+  );
+}
 
-export type Tone = "red" | "amber" | "orange" | "green" | "blue" | "slate" | "violet" | "brand";
+// ---------- Status tags ----------
 
+export type Tone = "red" | "amber" | "orange" | "green" | "blue" | "slate" | "violet" | "brand" | "cyan";
+
+// Kit "Status / Tags": dark tinted pill, colored dot, light label. Color never carries meaning alone.
 const TONES: Record<Tone, string> = {
-  red: "bg-red-50 text-red-700 ring-red-600/15",
-  amber: "bg-amber-50 text-amber-800 ring-amber-600/20",
-  orange: "bg-orange-50 text-orange-700 ring-orange-600/15",
-  green: "bg-emerald-50 text-emerald-700 ring-emerald-600/15",
-  blue: "bg-sky-50 text-sky-700 ring-sky-600/15",
-  slate: "bg-slate-100 text-slate-700 ring-slate-500/15",
-  violet: "bg-violet-50 text-violet-700 ring-violet-600/15",
-  brand: "bg-brand-50 text-brand-700 ring-brand-600/15",
+  red: "bg-red-500/10 text-red-300 ring-red-500/20",
+  amber: "bg-amber-500/10 text-amber-300 ring-amber-500/20",
+  orange: "bg-orange-500/10 text-orange-300 ring-orange-500/20",
+  green: "bg-emerald-500/10 text-emerald-300 ring-emerald-500/20",
+  blue: "bg-sky-500/10 text-sky-300 ring-sky-500/20",
+  slate: "bg-slate-500/10 text-slate-300 ring-slate-500/20",
+  violet: "bg-violet-500/10 text-violet-200 ring-violet-500/25",
+  brand: "bg-brand-500/15 text-brand-200 ring-brand-500/30",
+  cyan: "bg-cyan-500/10 text-cyan-300 ring-cyan-500/20",
 };
 
 const DOTS: Record<Tone, string> = {
-  red: "bg-red-500",
-  amber: "bg-amber-500",
-  orange: "bg-orange-500",
-  green: "bg-emerald-500",
-  blue: "bg-sky-500",
+  red: "bg-red-400",
+  amber: "bg-amber-400",
+  orange: "bg-orange-400",
+  green: "bg-emerald-400",
+  blue: "bg-sky-400",
   slate: "bg-slate-400",
-  violet: "bg-violet-500",
-  brand: "bg-brand-500",
+  violet: "bg-violet-400",
+  brand: "bg-brand-300",
+  cyan: "bg-cyan-400",
 };
 
 export function Badge({ tone = "slate", children, dot, className }: { tone?: Tone; children: ReactNode; dot?: boolean; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset", TONES[tone], className)}>
-      {dot && <span className={cn("h-1.5 w-1.5 rounded-full", DOTS[tone])} />}
+    <span className={cn("inline-flex h-5 items-center gap-1.5 whitespace-nowrap rounded-full px-2 text-[11px] font-medium ring-1 ring-inset", TONES[tone], className)}>
+      {dot && <span className={cn("h-1.5 w-1.5 rounded-full", DOTS[tone])} aria-hidden />}
       {children}
     </span>
   );
 }
 
-export function Dot({ tone }: { tone: Tone }) {
-  return <span className={cn("inline-block h-2 w-2 rounded-full", DOTS[tone])} />;
+export function Dot({ tone, className }: { tone: Tone; className?: string }) {
+  return <span className={cn("inline-block h-2 w-2 shrink-0 rounded-full", DOTS[tone], className)} aria-hidden />;
 }
 
 // ---------- Buttons ----------
+// Hierarchy from the kit: primary (Call, Save, Create, Move) · secondary (Edit, Add note) ·
+// tertiary text (Open, View) · danger. Only one primary per area.
 
-type BtnVariant = "primary" | "secondary" | "ghost" | "danger";
+type BtnVariant = "primary" | "secondary" | "tertiary" | "ghost" | "danger";
 const BTN: Record<BtnVariant, string> = {
-  primary: "bg-brand-700 text-white shadow-sm hover:bg-brand-900",
-  secondary: "bg-white text-ink-2 ring-1 ring-inset ring-line-strong shadow-sm hover:bg-subtle",
-  ghost: "text-ink-2 hover:bg-slate-100",
-  danger: "bg-red-600 text-white hover:bg-red-700",
+  primary: "bg-brand-500 text-white shadow-[0_1px_0_rgb(255_255_255/0.08)_inset] hover:bg-brand-500",
+  secondary: "bg-subtle text-ink ring-1 ring-inset ring-line-strong hover:bg-[#1b1f2a] hover:ring-[#363e50]",
+  tertiary: "text-brand-300 hover:bg-brand-50 hover:text-brand-200",
+  ghost: "text-ink-2 hover:bg-subtle hover:text-ink",
+  danger: "bg-red-500/10 text-red-300 ring-1 ring-inset ring-red-500/30 hover:bg-red-500/20",
 };
-const SIZES = { sm: "h-7 px-2.5 text-xs gap-1.5", md: "h-9 px-3.5 text-sm gap-2", lg: "h-11 px-5 text-sm gap-2" };
+const SIZES = { sm: "h-7 px-2.5 text-xs gap-1.5", md: "h-8 px-3 text-[13px] gap-1.5", lg: "h-10 px-4 text-sm gap-2" };
 
 export function buttonClass(variant: BtnVariant = "secondary", size: keyof typeof SIZES = "md", className?: string) {
   return cn(
-    "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+    "inline-flex select-none items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
     BTN[variant],
     SIZES[size],
     className,
   );
 }
 
-export function Button({
-  variant,
-  size,
-  className,
-  ...props
-}: ComponentProps<"button"> & { variant?: BtnVariant; size?: keyof typeof SIZES }) {
+export function Button({ variant, size, className, ...props }: ComponentProps<"button"> & { variant?: BtnVariant; size?: keyof typeof SIZES }) {
   return <button className={buttonClass(variant, size, className)} {...props} />;
 }
 
-export function ButtonLink({
-  variant,
-  size,
+export function ButtonLink({ variant, size, className, ...props }: ComponentProps<typeof Link> & { variant?: BtnVariant; size?: keyof typeof SIZES }) {
+  return <Link className={buttonClass(variant, size, className)} {...props} />;
+}
+
+/** Square icon-only button with an accessible label and hover tooltip. */
+export function IconButton({
+  label,
+  icon: Icon,
+  variant = "ghost",
   className,
   ...props
-}: ComponentProps<typeof Link> & { variant?: BtnVariant; size?: keyof typeof SIZES }) {
-  return <Link className={buttonClass(variant, size, className)} {...props} />;
+}: ComponentProps<"button"> & { label: string; icon: LucideIcon; variant?: BtnVariant }) {
+  return (
+    <button type="button" aria-label={label} title={label} className={buttonClass(variant, "md", cn("w-8 px-0", className))} {...props}>
+      <Icon className="h-4 w-4" strokeWidth={1.75} aria-hidden />
+    </button>
+  );
 }
 
 // ---------- Data display ----------
 
-export function Stat({ label, value, sub, className }: { label: ReactNode; value: ReactNode; sub?: ReactNode; className?: string }) {
+/** Metric tile: label, big tabular number, optional delta/sub-line. */
+export function Metric({ label, value, sub, className, tone }: { label: ReactNode; value: ReactNode; sub?: ReactNode; className?: string; tone?: "warn" | "bad" }) {
   return (
     <div className={className}>
-      <div className="text-xs text-muted">{label}</div>
-      <div className="tabular mt-0.5 text-sm font-semibold text-ink">{value}</div>
-      {sub && <div className="mt-0.5 text-[11px] text-faint">{sub}</div>}
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className={cn("tabular mt-1 text-[22px] font-semibold leading-7 tracking-tight", tone === "warn" ? "text-amber-300" : tone === "bad" ? "text-red-300" : "text-ink")}>{value}</dd>
+      {sub && <dd className="mt-0.5 text-[11px] text-faint">{sub}</dd>}
     </div>
   );
 }
 
-export function ProgressBar({ value, tone = "brand", className }: { value: number; tone?: Tone; className?: string }) {
+export function EmptyState({ icon: Icon, title, description, action }: { icon?: LucideIcon; title: string; description?: ReactNode; action?: ReactNode }) {
   return (
-    <div className={cn("h-1.5 w-full overflow-hidden rounded-full bg-slate-100", className)}>
-      <div className={cn("h-full rounded-full", DOTS[tone])} style={{ width: `${Math.max(0, Math.min(100, value * 100))}%` }} />
-    </div>
-  );
-}
-
-export function EmptyState({ icon, title, description, action }: { icon?: ReactNode; title: string; description?: string; action?: ReactNode }) {
-  return (
-    <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-      {icon && <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-muted">{icon}</div>}
+    <div className="flex flex-col items-center justify-center px-6 py-12 text-center">
+      {Icon && (
+        <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-line bg-subtle text-muted" aria-hidden>
+          <Icon className="h-5 w-5" strokeWidth={1.75} />
+        </span>
+      )}
       <div className="text-sm font-semibold text-ink">{title}</div>
-      {description && <p className="mt-1 max-w-sm text-sm text-muted">{description}</p>}
+      {description && <p className="mt-1 max-w-sm text-[13px] text-muted">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );
@@ -168,74 +224,32 @@ export function EmptyState({ icon, title, description, action }: { icon?: ReactN
 
 // ---------- Tables ----------
 
-export function Table({ className, children }: { className?: string; children: ReactNode }) {
-  return (
-    <div className={cn("scroll-thin overflow-x-auto", className)}>
-      <table className="w-full border-collapse text-left text-[13px]">{children}</table>
-    </div>
-  );
-}
+export const thClass = "whitespace-nowrap border-b border-line bg-subtle px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-faint";
+export const tdClass = "border-b border-line/70 px-3 py-2 align-middle text-ink-2";
 
-export function Th({ className, align, ...props }: ComponentProps<"th"> & { align?: "left" | "right" | "center" }) {
-  return (
-    <th
-      className={cn(
-        "sticky top-0 z-[1] whitespace-nowrap border-b border-line bg-subtle px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-muted first:pl-5 last:pr-5",
-        align === "right" && "text-right",
-        align === "center" && "text-center",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+// ---------- Segmented tabs (link based) ----------
 
-export function Td({ className, align, ...props }: ComponentProps<"td"> & { align?: "left" | "right" | "center" }) {
+export function Tabs({ tabs, label }: { tabs: { href: string; label: ReactNode; count?: number; active: boolean; tone?: "red" }[]; label: string }) {
   return (
-    <td
-      className={cn(
-        "border-b border-line/70 px-3 py-2.5 align-middle text-ink-2 first:pl-5 last:pr-5",
-        align === "right" && "tabular text-right",
-        align === "center" && "text-center",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
-
-// ---------- Tabs (link based) ----------
-
-export function LinkTabs({ tabs, active }: { tabs: { href: string; label: string; count?: number }[]; active: string }) {
-  return (
-    <div className="scroll-thin mb-5 flex gap-1 overflow-x-auto border-b border-line">
+    <nav aria-label={label} className="flex gap-0.5 relative overflow-x-auto border-b border-line">
       {tabs.map((t) => (
         <Link
           key={t.href}
           href={t.href}
+          aria-current={t.active ? "page" : undefined}
           className={cn(
-            "-mb-px flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors",
-            active === t.href ? "border-brand-600 text-ink" : "border-transparent text-muted hover:text-ink",
+            "-mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2 text-[13px] font-medium transition-colors",
+            t.active ? "border-brand-500 text-ink" : "border-transparent text-muted hover:text-ink",
           )}
         >
           {t.label}
-          {t.count !== undefined && (
-            <span className={cn("rounded-full px-1.5 text-[11px] tabular", active === t.href ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-muted")}>{t.count}</span>
+          {t.count !== undefined && t.count > 0 && (
+            <span className={cn("tabular rounded-full px-1.5 text-[11px]", t.tone === "red" ? "bg-red-500/15 text-red-300" : t.active ? "bg-brand-500/20 text-brand-200" : "bg-subtle text-muted")}>
+              {t.count}
+            </span>
           )}
         </Link>
       ))}
-    </div>
-  );
-}
-
-export function TrendPill({ pct, inverse }: { pct: number; inverse?: boolean }) {
-  const up = pct > 0.005;
-  const down = pct < -0.005;
-  const good = inverse ? down : up;
-  const bad = inverse ? up : down;
-  return (
-    <span className={cn("tabular inline-flex items-center text-xs font-medium", good && "text-emerald-600", bad && "text-red-600", !up && !down && "text-muted")}>
-      {up ? "▲" : down ? "▼" : "•"} {Math.abs(pct * 100).toFixed(0)}%
-    </span>
+    </nav>
   );
 }

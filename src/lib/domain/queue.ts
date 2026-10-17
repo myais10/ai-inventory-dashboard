@@ -40,7 +40,7 @@ export function rankLead<T extends QueueCandidate>(l: T, now: Date): RankedLead<
   if (l.nextActionType === "callback") {
     const late = l.nextActionAt ? now.getTime() - l.nextActionAt.getTime() : 0;
     p += 60 + Math.min(20, late / 3_600_000);
-    reasons.push(late > 15 * 60_000 ? `Promised callback, ${ago(late)} overdue` : "Promised callback is due now");
+    reasons.push(late > 15 * 60_000 ? `Promised callback, ${ago(late)} overdue` : late >= -15 * 60_000 ? "Promised callback is due now" : `Promised callback in ${ago(-late)}`);
   } else if (l.attemptCount === 0) {
     if (INBOUND.has(l.source)) {
       const age = now.getTime() - l.createdAt.getTime();

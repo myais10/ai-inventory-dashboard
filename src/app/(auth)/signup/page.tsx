@@ -13,7 +13,7 @@ export default function SignupPage() {
       <h1 className="text-2xl font-semibold tracking-tight text-ink">Create your workspace</h1>
       <p className="mt-1.5 text-sm text-muted">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-brand-700 hover:underline">
+        <Link href="/login" className="font-medium text-brand-300 hover:underline">
           Sign in
         </Link>
       </p>

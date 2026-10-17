@@ -10,7 +10,12 @@ export function OwnerFilter({ value, members }: { value: string; members: { id: 
       <label htmlFor="owner-filter" className="text-xs text-muted">
         Owner
       </label>
-      <select id="owner-filter" value={value} onChange={(e) => router.replace(`${pathname}?owner=${e.target.value}`, { scroll: false })} className="h-8 rounded-md border border-line-strong bg-white px-2 text-[13px]">
+      <select
+        id="owner-filter"
+        value={value}
+        onChange={(e) => router.replace(`${pathname}?owner=${e.target.value}`, { scroll: false })}
+        className="h-8 rounded-md border border-line-strong bg-subtle px-2 text-[13px] text-ink"
+      >
         <option value="me">My deals</option>
         <option value="all">Everyone</option>
         {members.map((m) => (

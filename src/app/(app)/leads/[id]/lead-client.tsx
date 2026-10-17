@@ -99,7 +99,7 @@ export function LeadActions({
               if (v === "unqualified") setReasonOpen(true);
               else changeStatus(v);
             }}
-            className="h-9 rounded-lg border border-line-strong bg-white px-2.5 text-sm text-ink-2 shadow-sm"
+            className="h-8 rounded-md border border-line-strong bg-subtle px-2.5 text-[13px] text-ink"
           >
             {LEAD_STATUSES.map((s) => (
               <option key={s.key} value={s.key}>
@@ -122,7 +122,7 @@ export function LeadActions({
             value={ownerId ?? "__none"}
             disabled={pending}
             onChange={(e) => assign(e.target.value)}
-            className="h-9 rounded-lg border border-line-strong bg-white px-2.5 text-sm text-ink-2 shadow-sm"
+            className="h-8 rounded-md border border-line-strong bg-subtle px-2.5 text-[13px] text-ink"
           >
             <option value="__none">Unassigned</option>
             {members.map((m) => (
@@ -214,7 +214,7 @@ export function NoteComposer({ leadId }: { leadId: string }) {
     });
 
   return (
-    <div className="border-b border-line px-5 py-4">
+    <div className="border-b border-line px-4 py-3">
       <label htmlFor="note" className="sr-only">
         Add a note
       </label>
@@ -232,7 +232,7 @@ export function NoteComposer({ leadId }: { leadId: string }) {
         }}
         rows={2}
         placeholder="Add a note — research, context, anything the next person should know…"
-        className="w-full resize-y rounded-lg border border-line-strong px-3 py-2 text-[13px] outline-none placeholder:text-faint focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+        className="w-full resize-y rounded-md border border-line-strong bg-subtle px-3 py-2 text-[13px] text-ink outline-none placeholder:text-faint focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25"
       />
       <div className="mt-2 flex items-center justify-end gap-3">
         <span className="text-xs text-faint">

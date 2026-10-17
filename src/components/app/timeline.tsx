@@ -30,7 +30,7 @@ export function Timeline({ items, tz, showLead }: { items: (TimelineItem & { lea
             <span
               className={cn(
                 "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full",
-                connected ? "bg-brand-50 text-brand-700" : a.type === "meeting_booked" || a.type === "deal_created" ? "bg-violet-50 text-violet-700" : "bg-slate-100 text-muted",
+                connected ? "bg-brand-50 text-brand-300" : a.type === "meeting_booked" || a.type === "deal_created" ? "bg-violet-500/10 text-violet-300" : "bg-subtle text-muted",
               )}
               aria-hidden
             >
@@ -42,7 +42,7 @@ export function Timeline({ items, tz, showLead }: { items: (TimelineItem & { lea
                 {a.type === "call" && <DispositionBadge disposition={a.disposition} />}
                 {a.type === "call" && meta.durationSec !== undefined && <span className="tabular text-xs text-muted">{fmtDuration(Number(meta.durationSec))}</span>}
                 {showLead && leadName && leadId && (
-                  <a href={`/leads/${leadId}`} className="text-xs font-medium text-brand-700 hover:underline">
+                  <a href={`/leads/${leadId}`} className="text-xs font-medium text-brand-300 hover:underline">
                     {leadName}
                   </a>
                 )}

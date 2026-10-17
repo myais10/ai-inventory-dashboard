@@ -33,9 +33,16 @@ export async function pipelineBoard(ctx: Ctx, opts: { owner: string }) {
     .where(and(eq(s.tasks.orgId, ctx.orgId), isNull(s.tasks.completedAt)))
     .groupBy(s.tasks.dealId)
     .as("ot");
+  const lastActivity = db
+    .select({ dealId: s.activities.dealId, at: sql<Date>`max(${s.activities.occurredAt})`.as("last_activity_at") })
+    .from(s.activities)
+    .where(eq(s.activities.orgId, ctx.orgId))
+    .groupBy(s.activities.dealId)
+    .as("la");
   const rows = await db
     .select({
       deal: s.deals,
+      lastActivityAt: lastActivity.at,
       companyName: s.companies.name,
       contactFirst: s.contacts.firstName,
       contactLast: s.contacts.lastName,
@@ -51,6 +58,7 @@ export async function pipelineBoard(ctx: Ctx, opts: { owner: string }) {
     .leftJoin(s.users, eq(s.users.id, s.deals.ownerId))
     .leftJoin(nextMeeting, eq(nextMeeting.dealId, s.deals.id))
     .leftJoin(openTasks, eq(openTasks.dealId, s.deals.id))
+    .leftJoin(lastActivity, eq(lastActivity.dealId, s.deals.id))
     .where(
       and(
         eq(s.deals.orgId, ctx.orgId),

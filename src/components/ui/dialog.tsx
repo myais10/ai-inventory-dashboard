@@ -60,7 +60,7 @@ export function Dialog({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-night/50 px-4 py-[10vh]" onMouseDown={onClose}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 px-4 py-[10vh] backdrop-blur-[2px]" onMouseDown={onClose}>
       <div
         ref={ref}
         role="dialog"
@@ -68,10 +68,10 @@ export function Dialog({
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
         tabIndex={-1}
-        className={cn("w-full max-w-md rounded-xl border border-line bg-white shadow-2xl outline-none animate-fade-in", className)}
+        className={cn("w-full max-w-md rounded-xl border border-line bg-surface shadow-elevated outline-none animate-fade-in", className)}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-3.5">
           <div>
             <h2 id={titleId} className="text-[15px] font-semibold text-ink">
               {title}
@@ -82,7 +82,7 @@ export function Dialog({
               </p>
             )}
           </div>
-          <button type="button" onClick={onClose} className="rounded p-1 text-muted hover:bg-slate-100 hover:text-ink" aria-label="Close">
+          <button type="button" onClick={onClose} className="rounded-md p-1 text-muted hover:bg-subtle hover:text-ink" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
         </div>

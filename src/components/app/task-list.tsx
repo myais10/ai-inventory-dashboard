@@ -70,9 +70,9 @@ export function TaskItem({ t, tz, showLead, showAssignee }: { t: TaskItemData; t
       <div className="min-w-0 flex-1">
         <div className={cn("text-[13px] font-medium text-ink", t.completedAt && "text-muted line-through")}>{t.title}</div>
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">
-          <span className="rounded bg-slate-100 px-1.5 py-px text-[11px] text-ink-2">{TYPE_LABEL[t.type] ?? t.type}</span>
+          <span className="rounded bg-subtle px-1.5 py-px text-[11px] text-ink-2">{TYPE_LABEL[t.type] ?? t.type}</span>
           {showLead && t.leadId && (
-            <Link href={`/leads/${t.leadId}`} className="font-medium text-ink-2 hover:text-brand-700 hover:underline">
+            <Link href={`/leads/${t.leadId}`} className="font-medium text-ink-2 hover:text-brand-200 hover:underline">
               {t.leadName}
               {t.companyName ? ` · ${t.companyName}` : ""}
             </Link>
@@ -103,17 +103,17 @@ export function TaskItem({ t, tz, showLead, showAssignee }: { t: TaskItemData; t
         )}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">
-        <span className={cn("whitespace-nowrap text-xs", overdue ? "font-medium text-red-700" : "text-muted")} suppressHydrationWarning>
+        <span className={cn("whitespace-nowrap text-xs", overdue ? "font-medium text-red-300" : "text-muted")} suppressHydrationWarning>
           {t.completedAt ? `Done ${fmtRelative(t.completedAt)}` : overdue ? `Overdue · ${fmtDateTime(t.dueAt, tz)}` : fmtDateTime(t.dueAt, tz, { weekday: true, date: true, time: true })}
         </span>
         {!t.completedAt && (
           <span className="flex items-center gap-1">
             {isCall && t.leadId && (
-              <Link href={`/desk?lead=${t.leadId}`} className="rounded p-1 text-muted hover:bg-brand-50 hover:text-brand-700" aria-label={`Call ${t.leadName ?? "lead"} now`} title="Call now">
+              <Link href={`/desk?lead=${t.leadId}`} className="rounded p-1 text-muted hover:bg-brand-50 hover:text-brand-200" aria-label={`Call ${t.leadName ?? "lead"} now`} title="Call now">
                 <PhoneCall className="h-3.5 w-3.5" />
               </Link>
             )}
-            <button type="button" onClick={() => setEditing((e) => !e)} className="rounded p-1 text-muted hover:bg-slate-100 hover:text-ink" aria-label="Reschedule" title="Reschedule">
+            <button type="button" onClick={() => setEditing((e) => !e)} className="rounded p-1 text-muted hover:bg-subtle hover:text-ink" aria-label="Reschedule" title="Reschedule">
               <CalendarClock className="h-3.5 w-3.5" />
             </button>
           </span>
@@ -164,7 +164,7 @@ export function NewTaskButton({
       </Button>
       <Dialog open={open} onClose={() => setOpen(false)} title="New task" description="Tasks show up in Tasks and on the record they belong to.">
         <form action={submit} className="space-y-3">
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-[13px] text-red-700">{error}</p>}
+          {error && <p className="rounded-md bg-red-500/10 px-3 py-2 text-[13px] text-red-300">{error}</p>}
           <Field label="What needs to happen?" htmlFor="t-title">
             <Input id="t-title" name="title" defaultValue={defaultTitle} required data-autofocus />
           </Field>

@@ -22,7 +22,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <h1 className="text-2xl font-semibold tracking-tight text-ink">Sign in</h1>
       <p className="mt-1.5 text-sm text-muted">
         New to Phoonica?{" "}
-        <Link href="/signup" className="font-medium text-brand-700 hover:underline">
+        <Link href="/signup" className="font-medium text-brand-300 hover:underline">
           Create a workspace
         </Link>
       </p>

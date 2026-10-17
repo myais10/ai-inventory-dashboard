@@ -255,7 +255,8 @@ async function generateWorkspace(tx: Executor, orgId: string, repIds: string[], 
   for (let i = 0; i < nCompanies; i++) {
     const industry = weighted(rng, INDUSTRY_WEIGHTS);
     const [city, state, tz, area] = rng.pick(CITIES);
-    let name = `${rng.pick(PREFIXES)} ${rng.pick(INDUSTRY_WORDS[industry])}${rng.pick(SUFFIXES)}`;
+    const word = rng.pick(INDUSTRY_WORDS[industry]);
+    let name = `${rng.pick(PREFIXES)} ${word}${word.endsWith(".") ? "" : rng.pick(SUFFIXES)}`;
     if (usedNames.has(name)) name = `${city} ${name}`;
     if (usedNames.has(name)) continue;
     usedNames.add(name);
@@ -441,7 +442,7 @@ async function generateWorkspace(tx: Executor, orgId: string, repIds: string[], 
         lead.updatedAt = at;
       }
     } else {
-      deal.nextMoveAt = addHours(at, 24 * rng.range(3, 9));
+      deal.nextMoveAt = addHours(at, 24 * rng.range(2, 6));
       const tt = STAGE_TASKS[stage.name];
       if (tt) {
         tasks.push({
@@ -471,7 +472,7 @@ async function generateWorkspace(tx: Executor, orgId: string, repIds: string[], 
       if (d.closedAt || !d.nextMoveAt || d.nextMoveAt > until) continue;
       const idx = openStages.findIndex((x) => x.id === d.stageId);
       if (idx < 1) continue; // Meeting Booked waits for the meeting
-      const p = [0, 0.78, 0.72, 0.7, 0.62][idx] ?? 0.6;
+      const p = [0, 0.82, 0.78, 0.75, 0.7][idx] ?? 0.65;
       if (!rng.chance(p)) moveDeal(d, lostStage, d.nextMoveAt, rng.pick(LOST_REASONS));
       else moveDeal(d, idx + 1 < openStages.length ? openStages[idx + 1] : wonStage, d.nextMoveAt);
     }

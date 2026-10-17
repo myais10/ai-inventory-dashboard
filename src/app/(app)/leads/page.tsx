@@ -5,7 +5,7 @@ import { LEAD_STATUSES, type LeadStatus } from "@/lib/domain/dispositions";
 import { SOURCES } from "@/lib/domain/scoring";
 import { ctxOf, listCampaigns, listMembers } from "@/lib/services/context";
 import { listLeads, type LeadFilters } from "@/lib/services/leads";
-import { cn } from "@/lib/utils";
+import { PageHeader, Tabs, buttonClass } from "@/components/ui";
 import { LeadFiltersBar } from "./filters";
 import { LeadTable } from "./lead-table";
 
@@ -48,29 +48,11 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
   };
 
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[22px] font-semibold tracking-tight text-ink">Leads</h1>
-          <p className="mt-0.5 text-sm text-muted">{activeView.hint}</p>
-        </div>
+    <div className="px-4 py-5 sm:px-6">
+      <PageHeader title="Leads" description={activeView.hint} className="mb-3" />
+      <div className="mb-3">
+        <Tabs label="Lead views" tabs={VIEWS.map((v) => ({ href: href({ view: v.key || undefined }), label: v.label, active: v.key === (filters.view ?? "") }))} />
       </div>
-
-      <nav aria-label="Lead views" className="mb-3 flex gap-1 overflow-x-auto border-b border-line">
-        {VIEWS.map((v) => {
-          const active = v.key === (filters.view ?? "");
-          return (
-            <Link
-              key={v.key}
-              href={href({ view: v.key || undefined })}
-              aria-current={active ? "page" : undefined}
-              className={cn("-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-[13px] font-medium", active ? "border-brand-600 text-ink" : "border-transparent text-muted hover:text-ink")}
-            >
-              {v.label}
-            </Link>
-          );
-        })}
-      </nav>
 
       <LeadFiltersBar
         values={{ q: sp.q ?? "", owner: filters.owner!, status: sp.status ?? "", campaign: sp.campaign ?? "", source: sp.source ?? "", sort: filters.sort!, view: sp.view ?? "" }}
@@ -95,12 +77,12 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           </span>
           <div className="flex gap-2">
             {result.page > 1 && (
-              <Link className="rounded-md border border-line bg-white px-3 py-1.5 font-medium text-ink-2 hover:bg-subtle" href={href({ page: String(result.page - 1) })}>
+              <Link className={buttonClass("secondary", "md")} href={href({ page: String(result.page - 1) })}>
                 Previous
               </Link>
             )}
             {result.page < result.pages && (
-              <Link className="rounded-md border border-line bg-white px-3 py-1.5 font-medium text-ink-2 hover:bg-subtle" href={href({ page: String(result.page + 1) })}>
+              <Link className={buttonClass("secondary", "md")} href={href({ page: String(result.page + 1) })}>
                 Next
               </Link>
             )}

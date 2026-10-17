@@ -37,18 +37,18 @@ export function LoginForm({ next, demo }: { next?: string; demo: { org: string; 
         <SubmitButton>Sign in</SubmitButton>
       </form>
       {demo && (
-      <section aria-labelledby="demo-h" className="mt-8 rounded-lg border border-line p-4">
+      <section aria-labelledby="demo-h" className="mt-8 rounded-lg border border-line bg-surface p-4">
         <h2 id="demo-h" className="text-[13px] font-semibold text-ink">
           Explore the demo workspace
         </h2>
-        <p className="mt-0.5 text-xs text-muted">{demo.org} — 6 weeks of real call activity. Pick a seat:</p>
+        <p className="mt-0.5 text-xs text-muted">{demo.org} — six weeks of simulated team activity. Pick a seat:</p>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {demo.accounts.map((a) => (
             <button
               key={a.email}
               type="button"
               onClick={() => signInAs(a)}
-              className="rounded-md border border-line px-3 py-2 text-left transition-colors hover:border-brand-500 hover:bg-brand-50"
+              className="rounded-md border border-line bg-subtle px-3 py-2 text-left transition-colors hover:border-brand-500 hover:bg-brand-50"
             >
               <span className="block text-[13px] font-medium text-ink">{a.name}</span>
               <span className="block text-[11px] text-muted">{a.title}</span>

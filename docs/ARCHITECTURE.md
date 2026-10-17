@@ -55,3 +55,28 @@ deals advancing through stages over time. History therefore obeys the same rules
   owners manage members. Advanced permissions are deliberately deferred.
 - **Rules-based "AI".** Call prep is generated from lead data by `demoAI` and labelled as such; an LLM provider can
   implement the same `AIProvider` interface.
+
+## Design system
+
+The UI implements the Phoonica Design Kit. Tokens live in `src/app/globals.css` (`@theme`), named by role so
+components never hard-code hex values:
+
+| Token | Value | Use |
+|---|---|---|
+| `canvas` / `surface` / `subtle` | #0A0B0F / #11131A / #161922 | page / cards, sidebar, tables / inputs, hover, table header |
+| `line` / `line-strong` | #1F2430 / #2B3242 | borders / input and hover borders |
+| `ink` / `ink-2` / `muted` / `faint` | #F9FAFB / #CBD5E1 / #94A3B8 / #64748B | text hierarchy |
+| `brand-500` (primary) / `brand-800` / `brand-300` | #7C3AED / #5B21B6 / #A78BFA | primary actions, active states / pressed / accents and links |
+| `brand-50`, `brand-100` | dark purple tints | selected rows, active nav |
+| accent / success / warning / danger | #22D3EE / #10B981 / #F59E0B / #EF4444 | status only |
+
+Typography is Inter: page title 22/30 semibold, section titles 13–14 semibold, body 13–14, metadata 11–12,
+all numbers `tabular-nums`. Radius 4/8/12/16 (inputs and buttons 8, cards 12). Two shadows: `shadow-card` and
+`shadow-elevated` (popovers, dialogs, the Next Best Lead card).
+
+Shared primitives (`src/components/ui`): `Button`/`buttonClass` (primary · secondary · tertiary · ghost · danger —
+one primary per area), `IconButton`, `Badge` (status tag: tinted pill + dot, never color alone), `Panel`
+(titled section with icon tile), `Metric` (KPI tile), `Tabs`, `EmptyState`, `thClass`/`tdClass`, `Dialog`, toasts,
+and `Link` (no prefetch by default). Icons are lucide at stroke 1.75. Status language: lead status
+(New · Attempting · Connected · Qualified · Nurture · Unqualified · Customer), temperature (Hot · Warm · Cold),
+call outcomes, and rep presence (On call · Available · Idle · Offline — derived from call activity).

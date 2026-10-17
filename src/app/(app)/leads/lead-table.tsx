@@ -3,26 +3,28 @@
 import Link from "@/components/ui/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { PhoneCall, PhoneOff, Ban } from "lucide-react";
+import { Ban, Phone, PhoneCall, PhoneOff, SearchX } from "lucide-react";
 import type { LeadListRow } from "@/lib/services/leads";
 import { DispositionBadge, ScoreBadge, StatusBadge } from "@/components/app/lead-badges";
 import { Kbd, useShortcuts } from "@/components/app/shortcuts";
 import { useToast } from "@/components/ui/toast";
-import { Button } from "@/components/ui";
+import { Button, EmptyState, thClass } from "@/components/ui";
 import { fmtDateTime, fmtRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { assignLeadsAction } from "./actions";
 
 function NextAction({ r, tz }: { r: LeadListRow; tz: string }) {
-  if (r.doNotCall) return <span className="inline-flex items-center gap-1 text-xs text-red-700"><Ban className="h-3 w-3" aria-hidden /> Do not call</span>;
-  if (r.phoneInvalid) return <span className="inline-flex items-center gap-1 text-xs text-red-700"><PhoneOff className="h-3 w-3" aria-hidden /> Fix phone number</span>;
-  if (r.nextActionType === "none" || r.status === "unqualified" || r.status === "converted") return <span className="text-xs text-faint">—</span>;
+  if (r.doNotCall) return <span className="inline-flex items-center gap-1 text-xs text-red-300"><Ban className="h-3 w-3" aria-hidden /> Do not call</span>;
+  if (r.phoneInvalid) return <span className="inline-flex items-center gap-1 text-xs text-red-300"><PhoneOff className="h-3 w-3" aria-hidden /> Fix phone number</span>;
+  if (r.status === "qualified" && r.nextActionType === "none") return <span className="text-xs text-violet-300">Work the deal</span>;
+  if (r.status === "converted") return <span className="text-xs text-faint">Customer</span>;
+  if (r.nextActionType === "none" || r.status === "unqualified") return <span className="text-xs text-faint">—</span>;
   const now = new Date();
   const due = !r.nextActionAt || r.nextActionAt <= now;
   const overdue = r.nextActionAt && now.getTime() - r.nextActionAt.getTime() > 86_400_000;
   const label = r.nextActionType === "callback" ? "Callback" : r.attemptCount === 0 ? "First call" : "Call";
   return (
-    <span className={cn("text-xs", overdue ? "font-medium text-red-700" : due ? "font-medium text-brand-700" : "text-muted")} suppressHydrationWarning>
+    <span className={cn("text-xs", overdue ? "font-medium text-red-300" : due ? "font-medium text-brand-300" : "text-muted")} suppressHydrationWarning>
       {r.nextActionType === "callback" && <PhoneCall className="mr-1 inline h-3 w-3" aria-hidden />}
       {label} · {due ? (r.nextActionAt ? (overdue ? `overdue ${fmtRelative(r.nextActionAt, now).replace(" ago", "")}` : "due now") : "due now") : fmtDateTime(r.nextActionAt, tz, { weekday: true, date: false, time: true })}
     </span>
@@ -98,15 +100,15 @@ export function LeadTable({
   const allChecked = rows.length > 0 && rows.every((r) => selected.has(r.id));
 
   return (
-    <div className="overflow-hidden rounded-lg border border-line bg-white">
-      <div className="flex min-h-11 flex-wrap items-center gap-3 border-b border-line px-4 py-2 text-[13px]">
+    <div className="overflow-hidden rounded-lg border border-line bg-surface shadow-card">
+      <div className="flex min-h-10 flex-wrap items-center gap-3 border-b border-line px-4 py-1.5 text-[13px]">
         {selected.size > 0 ? (
           <>
             <span className="font-medium text-ink">{selected.size} selected</span>
             <label htmlFor="assign-to" className="sr-only">
               Assign selected leads to
             </label>
-            <select id="assign-to" value={assignTo} onChange={(e) => setAssignTo(e.target.value)} className="h-7 rounded-md border border-line-strong bg-white px-2 text-[13px]">
+            <select id="assign-to" value={assignTo} onChange={(e) => setAssignTo(e.target.value)} className="h-7 rounded-md border border-line-strong bg-subtle px-2 text-[13px] text-ink">
               <option value="">Assign to…</option>
               {members.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -118,16 +120,16 @@ export function LeadTable({
             <Button size="sm" variant="primary" onClick={assign} disabled={!assignTo || pending}>
               {pending ? "Assigning…" : "Apply"}
             </Button>
-            <button type="button" className="text-muted hover:text-ink" onClick={() => setSelected(new Set())}>
+            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
               Clear
-            </button>
+            </Button>
           </>
         ) : (
           <>
             <span className="tabular text-muted">
-              <span className="font-medium text-ink">{total.toLocaleString()}</span> lead{total === 1 ? "" : "s"}
+              <span className="font-semibold text-ink">{total.toLocaleString()}</span> lead{total === 1 ? "" : "s"}
             </span>
-            <span className="ml-auto hidden items-center gap-3 text-xs text-faint md:flex">
+            <span className="ml-auto hidden items-center gap-3 text-[11px] text-faint md:flex">
               <span>
                 <Kbd keys="j" />
                 <Kbd keys="k" /> move
@@ -148,92 +150,124 @@ export function LeadTable({
         )}
       </div>
       {rows.length === 0 ? (
-        <p className="px-6 py-16 text-center text-sm text-muted">{emptyHint}</p>
+        <EmptyState icon={SearchX} title="No leads here" description={emptyHint} />
       ) : (
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className="w-full border-collapse text-left text-[13px]">
             <caption className="sr-only">Leads</caption>
             <thead>
-              <tr className="border-b border-line bg-subtle text-[11px] uppercase tracking-wide text-muted">
+              <tr>
                 {canAssign && (
-                  <th scope="col" className="w-10 py-2 pl-4">
+                  <th scope="col" className={cn(thClass, "w-10 pl-4")}>
                     <input
                       type="checkbox"
                       aria-label="Select all leads on this page"
                       checked={allChecked}
                       onChange={() => setSelected(allChecked ? new Set() : new Set(rows.map((r) => r.id)))}
-                      className="h-4 w-4 accent-brand-600"
+                      className="h-3.5 w-3.5 accent-brand-500"
                     />
                   </th>
                 )}
-                <th scope="col" className={cn("py-2 pr-3 font-medium", !canAssign && "pl-4")}>Lead</th>
-                <th scope="col" className="hidden px-3 py-2 font-medium md:table-cell">Company</th>
-                <th scope="col" className="px-3 py-2 font-medium">Status</th>
-                <th scope="col" className="px-3 py-2 font-medium">Score</th>
-                <th scope="col" className="hidden px-3 py-2 font-medium lg:table-cell">Last touch</th>
-                <th scope="col" className="px-3 py-2 font-medium">Next action</th>
-                <th scope="col" className="hidden px-3 py-2 pr-4 font-medium xl:table-cell">Owner</th>
+                <th scope="col" className={cn(thClass, !canAssign && "pl-4")}>
+                  Lead
+                </th>
+                <th scope="col" className={cn(thClass, "hidden md:table-cell")}>
+                  Company
+                </th>
+                <th scope="col" className={thClass}>
+                  Score
+                </th>
+                <th scope="col" className={thClass}>
+                  Status
+                </th>
+                <th scope="col" className={cn(thClass, "hidden lg:table-cell")}>
+                  Last activity
+                </th>
+                <th scope="col" className={thClass}>
+                  Next action
+                </th>
+                <th scope="col" className={cn(thClass, "hidden xl:table-cell")}>
+                  Owner
+                </th>
+                <th scope="col" className={cn(thClass, "w-12 pr-4")}>
+                  <span className="sr-only">Call</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
-                <tr
-                  key={r.id}
-                  ref={(el) => {
-                    rowRefs.current[i] = el;
-                  }}
-                  onClick={(e) => {
-                    if ((e.target as HTMLElement).closest("a,input,button")) return;
-                    router.push(`/leads/${r.id}`);
-                  }}
-                  className={cn(
-                    "cursor-pointer border-b border-line/70 last:border-0 hover:bg-subtle",
-                    i === cursor && "bg-brand-50/60 outline outline-1 -outline-offset-1 outline-brand-300",
-                    selected.has(r.id) && "bg-brand-50/40",
-                  )}
-                >
-                  {canAssign && (
-                    <td className="py-2.5 pl-4">
-                      <input type="checkbox" aria-label={`Select ${r.firstName} ${r.lastName}`} checked={selected.has(r.id)} onChange={() => toggle(r.id)} className="h-4 w-4 accent-brand-600" />
-                    </td>
-                  )}
-                  <td className={cn("max-w-[240px] py-2.5 pr-3", !canAssign && "pl-4")}>
-                    <Link href={`/leads/${r.id}`} className="block truncate font-medium text-ink hover:text-brand-700 hover:underline">
-                      {r.firstName} {r.lastName}
-                    </Link>
-                    <span className="block truncate text-xs text-muted">{r.title}</span>
-                    <span className="block truncate text-xs text-muted md:hidden">{r.companyName}</span>
-                  </td>
-                  <td className="hidden max-w-[260px] px-3 py-2.5 md:table-cell">
-                    <span className="block truncate text-ink-2">{r.companyName}</span>
-                    <span className="block truncate text-xs text-muted">
-                      {[r.industry, r.employeeCount ? `${r.employeeCount} emp` : null, r.city && `${r.city}, ${r.state}`].filter(Boolean).join(" · ")}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <StatusBadge status={r.status} />
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <ScoreBadge score={r.score} />
-                  </td>
-                  <td className="hidden px-3 py-2.5 lg:table-cell">
-                    {r.lastContactedAt ? (
-                      <span className="flex items-center gap-2">
-                        <DispositionBadge disposition={r.lastDisposition} />
-                        <span className="text-xs text-muted" suppressHydrationWarning>
-                          {fmtRelative(r.lastContactedAt)}
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="text-xs text-faint">Never</span>
+              {rows.map((r, i) => {
+                const callable = !r.doNotCall && !r.phoneInvalid && r.status !== "unqualified" && r.status !== "converted" && !!(r.phone || r.mobile);
+                return (
+                  <tr
+                    key={r.id}
+                    ref={(el) => {
+                      rowRefs.current[i] = el;
+                    }}
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest("a,input,button")) return;
+                      router.push(`/leads/${r.id}`);
+                    }}
+                    className={cn(
+                      "group cursor-pointer border-b border-line/70 transition-colors last:border-0 hover:bg-subtle",
+                      i === cursor && "bg-brand-50 outline outline-1 -outline-offset-1 outline-brand-500/50",
+                      selected.has(r.id) && "bg-brand-50",
                     )}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <NextAction r={r} tz={tz} />
-                  </td>
-                  <td className="hidden whitespace-nowrap px-3 py-2.5 pr-4 text-xs text-ink-2 xl:table-cell">{r.ownerName ?? <span className="text-amber-700">Unassigned</span>}</td>
-                </tr>
-              ))}
+                  >
+                    {canAssign && (
+                      <td className="py-2 pl-4">
+                        <input type="checkbox" aria-label={`Select ${r.firstName} ${r.lastName}`} checked={selected.has(r.id)} onChange={() => toggle(r.id)} className="h-3.5 w-3.5 accent-brand-500" />
+                      </td>
+                    )}
+                    <td className={cn("max-w-[220px] py-2 pr-3", !canAssign && "pl-4")}>
+                      <Link href={`/leads/${r.id}`} className="block truncate font-medium text-ink hover:text-brand-200">
+                        {r.firstName} {r.lastName}
+                      </Link>
+                      <span className="block truncate text-xs text-faint">{r.title}</span>
+                      <span className="block truncate text-xs text-faint md:hidden">{r.companyName}</span>
+                    </td>
+                    <td className="hidden max-w-[260px] px-3 py-2 md:table-cell">
+                      <span className="block truncate text-ink-2">{r.companyName}</span>
+                      <span className="block truncate text-xs text-faint">
+                        {[r.industry, r.employeeCount ? `${r.employeeCount} emp` : null, r.city && `${r.city}, ${r.state}`].filter(Boolean).join(" · ")}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <ScoreBadge score={r.score} />
+                    </td>
+                    <td className="px-3 py-2">
+                      <StatusBadge status={r.status} />
+                    </td>
+                    <td className="hidden px-3 py-2 lg:table-cell">
+                      {r.lastContactedAt ? (
+                        <span className="flex items-center gap-2">
+                          <DispositionBadge disposition={r.lastDisposition} />
+                          <span className="tabular text-xs text-faint" suppressHydrationWarning>
+                            {fmtRelative(r.lastContactedAt)}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-xs text-faint">Never contacted</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <NextAction r={r} tz={tz} />
+                    </td>
+                    <td className="hidden whitespace-nowrap px-3 py-2 text-xs text-ink-2 xl:table-cell">{r.ownerName ?? <span className="text-amber-300">Unassigned</span>}</td>
+                    <td className="py-2 pr-4 text-right">
+                      {callable && (
+                        <Link
+                          href={`/desk?lead=${r.id}`}
+                          aria-label={`Call ${r.firstName} ${r.lastName}`}
+                          title="Call in Calling Desk"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-faint transition-colors hover:bg-brand-500 hover:text-white group-hover:text-brand-300"
+                        >
+                          <Phone className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
+                        </Link>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

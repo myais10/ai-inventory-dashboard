@@ -22,7 +22,7 @@ export interface DispositionDef {
   label: string;
   shortcut: string;
   connected: boolean;
-  tone: "slate" | "amber" | "green" | "brand" | "red" | "violet";
+  tone: "slate" | "amber" | "green" | "brand" | "red" | "violet" | "cyan";
   /** What the rep sees before saving: the automatic consequence. */
   effect: string;
   requires?: "callbackAt" | "meeting" | "reason";
@@ -36,8 +36,8 @@ export const DISPOSITIONS: DispositionDef[] = [
   { key: "interested", label: "Interested", shortcut: "5", connected: true, tone: "green", effect: "Follow-up call in 2 business days" },
   { key: "callback", label: "Callback requested", shortcut: "6", connected: true, tone: "brand", effect: "Callback task at the time you choose; jumps to top of queue", requires: "callbackAt" },
   { key: "meeting_booked", label: "Meeting booked", shortcut: "7", connected: true, tone: "violet", effect: "Qualifies lead, books meeting, opens a deal in the pipeline", requires: "meeting" },
-  { key: "not_interested", label: "Not interested", shortcut: "8", connected: true, tone: "red", effect: "Marks unqualified and removes from queue", requires: "reason" },
-  { key: "wrong_number", label: "Wrong number", shortcut: "9", connected: false, tone: "red", effect: "Flags phone invalid; parks lead until number is fixed" },
+  { key: "not_interested", label: "Not interested", shortcut: "8", connected: true, tone: "slate", effect: "Marks unqualified and removes from queue", requires: "reason" },
+  { key: "wrong_number", label: "Wrong number", shortcut: "9", connected: false, tone: "amber", effect: "Flags phone invalid; parks lead until number is fixed" },
   { key: "do_not_call", label: "Do not call", shortcut: "0", connected: true, tone: "red", effect: "Adds contact to do-not-call; never queued again" },
 ];
 
@@ -189,13 +189,13 @@ export function planDisposition(prev: LeadCallState, input: DispositionInput, no
   }
 }
 
-export const LEAD_STATUSES: { key: LeadStatus; label: string; tone: "slate" | "amber" | "green" | "brand" | "red" | "violet" | "blue" }[] = [
-  { key: "new", label: "New", tone: "blue" },
-  { key: "attempting", label: "Attempting", tone: "amber" },
-  { key: "connected", label: "Connected", tone: "brand" },
+export const LEAD_STATUSES: { key: LeadStatus; label: string; tone: "slate" | "amber" | "green" | "brand" | "red" | "violet" | "blue" | "cyan" }[] = [
+  { key: "new", label: "New", tone: "violet" },
+  { key: "attempting", label: "Attempting", tone: "blue" },
+  { key: "connected", label: "Connected", tone: "cyan" },
   { key: "qualified", label: "Qualified", tone: "green" },
-  { key: "nurture", label: "Nurture", tone: "slate" },
-  { key: "unqualified", label: "Unqualified", tone: "red" },
-  { key: "converted", label: "Converted", tone: "violet" },
+  { key: "nurture", label: "Nurture", tone: "amber" },
+  { key: "unqualified", label: "Unqualified", tone: "slate" },
+  { key: "converted", label: "Customer", tone: "brand" },
 ];
 export const LEAD_STATUS_MAP = Object.fromEntries(LEAD_STATUSES.map((s) => [s.key, s])) as Record<LeadStatus, (typeof LEAD_STATUSES)[number]>;

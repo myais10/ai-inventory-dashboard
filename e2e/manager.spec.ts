@@ -2,13 +2,13 @@ import { expect, test } from "@playwright/test";
 import { login } from "./helpers";
 
 test("reps cannot open the manager dashboard", async ({ page }) => {
-  await login(page, "sam@brightline.demo", "/team");
+  await login(page, "sam@brightline.demo", "/sales-floor");
   await expect(page).toHaveURL(/\/desk/);
   await expect(page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: /^Team/ })).toHaveCount(0);
 });
 
 test("manager assigns an unassigned inbound lead from the Team dashboard", async ({ page }) => {
-  await login(page, "dana@brightline.demo", "/team");
+  await login(page, "dana@brightline.demo", "/sales-floor");
   const panel = page.getByRole("complementary", { name: "Needs attention" });
   const first = panel.locator("li").filter({ has: page.getByRole("button", { name: "Assign" }) }).first();
   test.skip((await first.count()) === 0, "no unassigned leads left");
@@ -20,7 +20,7 @@ test("manager assigns an unassigned inbound lead from the Team dashboard", async
 });
 
 test("a meeting booked on the desk shows up in team metrics immediately", async ({ page, context }) => {
-  await login(page, "dana@brightline.demo", "/team?period=today");
+  await login(page, "dana@brightline.demo", "/sales-floor?period=today");
   const meetingsTile = page.locator("dl > div").filter({ hasText: "Meetings booked" }).locator("dd").first();
   const before = Number((await meetingsTile.textContent())!.replace(/\D/g, ""));
 
@@ -36,7 +36,7 @@ test("a meeting booked on the desk shows up in team metrics immediately", async 
   await expect(page.getByText(/Deal added to pipeline/)).toBeVisible();
 
   await context.clearCookies();
-  await login(page, "dana@brightline.demo", "/team?period=today");
+  await login(page, "dana@brightline.demo", "/sales-floor?period=today");
   await expect(meetingsTile).toHaveText(String(before + 1));
 });
 
@@ -65,4 +65,11 @@ test("owner adds a team member who can then sign in", async ({ page, context }) 
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/desk/);
   await expect(page.getByRole("heading", { name: "Calling Desk" })).toBeVisible();
+
+  // Clean up: remove the member again so repeated runs don't accumulate users.
+  await context.clearCookies();
+  await login(page, "jordan@brightline.demo", "/settings");
+  await page.locator("li").filter({ hasText: email }).getByRole("button", { name: "Remove" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Remove" }).click();
+  await expect(page.getByText(/Member removed/)).toBeVisible();
 });

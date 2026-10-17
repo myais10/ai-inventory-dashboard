@@ -10,12 +10,12 @@ export const metadata: Metadata = { title: "Settings" };
 
 function Section({ id, title, description, children }: { id: string; title: string; description: string; children: React.ReactNode }) {
   return (
-    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-6 rounded-lg border border-line bg-white">
-      <header className="border-b border-line px-5 py-3">
-        <h2 id={`${id}-h`} className="text-[15px] font-semibold text-ink">
+    <section id={id} aria-labelledby={`${id}-h`} className="scroll-mt-16 rounded-lg border border-line bg-surface shadow-card">
+      <header className="border-b border-line px-5 py-2.5">
+        <h2 id={`${id}-h`} className="text-sm font-semibold text-ink">
           {title}
         </h2>
-        <p className="text-[13px] text-muted">{description}</p>
+        <p className="text-xs text-muted">{description}</p>
       </header>
       <div className="px-5 py-4">{children}</div>
     </section>
@@ -31,10 +31,10 @@ export default async function SettingsPage() {
   const providers = providerStatus();
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="max-w-3xl space-y-4 px-4 py-5 sm:px-6">
       <div>
         <h1 className="text-[22px] font-semibold tracking-tight text-ink">Settings</h1>
-        <nav aria-label="Settings sections" className="mt-2 flex flex-wrap gap-3 text-[13px]">
+        <nav aria-label="Settings sections" className="mt-3 flex flex-wrap gap-1.5 text-[13px]">
           {[
             ["workspace", "Workspace & ICP"],
             ["team", "Team"],
@@ -42,7 +42,7 @@ export default async function SettingsPage() {
             ["data", "Data"],
             ["profile", "Your profile"],
           ].map(([id, l]) => (
-            <a key={id} href={`#${id}`} className="font-medium text-brand-700 hover:underline">
+            <a key={id} href={`#${id}`} className="rounded-md border border-line bg-surface px-2.5 py-1 font-medium text-ink-2 hover:border-line-strong hover:text-ink">
               {l}
             </a>
           ))}

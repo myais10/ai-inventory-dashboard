@@ -28,7 +28,7 @@ export function StageStepper({ dealId, stageId, stages, canEdit }: { dealId: str
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <ol className="flex flex-1 overflow-hidden rounded-lg border border-line bg-white" aria-label="Deal stage">
+      <ol className="flex flex-1 overflow-hidden rounded-lg border border-line bg-surface" aria-label="Deal stage">
         {open.map((s, i) => {
           const done = current.kind === "won" || (idx >= 0 && i < idx);
           const active = s.id === stageId;
@@ -41,7 +41,7 @@ export function StageStepper({ dealId, stageId, stages, canEdit }: { dealId: str
                 aria-current={active ? "step" : undefined}
                 className={cn(
                   "flex h-10 w-full items-center justify-center gap-1.5 truncate px-2 text-[12.5px] font-medium transition-colors",
-                  active ? "bg-brand-700 text-white" : done ? "bg-brand-50 text-brand-700" : "text-muted hover:bg-subtle",
+                  active ? "bg-brand-500 text-white" : done ? "bg-brand-50 text-brand-300" : "text-muted hover:bg-subtle",
                   canEdit && !active && "cursor-pointer",
                 )}
               >
@@ -54,10 +54,10 @@ export function StageStepper({ dealId, stageId, stages, canEdit }: { dealId: str
       </ol>
       {canEdit && (
         <div className="flex gap-2">
-          <Button onClick={() => move(won.id)} disabled={pending || current.kind === "won"} className="border-emerald-600 text-emerald-700">
+          <Button onClick={() => move(won.id)} disabled={pending || current.kind === "won"} className="text-emerald-300 ring-emerald-500/40 hover:ring-emerald-500/60">
             Mark won
           </Button>
-          <Button onClick={() => setLostOpen(true)} disabled={pending || current.kind === "lost"}>
+          <Button variant="danger" onClick={() => setLostOpen(true)} disabled={pending || current.kind === "lost"}>
             Mark lost
           </Button>
         </div>

@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import Link from "@/components/ui/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, ArrowLeft, Ban, Building2, Clock, ExternalLink, Mail, MapPin, Phone, Smartphone, Users } from "lucide-react";
+import { AlertTriangle, Ban, CalendarClock, CheckSquare, Clock, ExternalLink, Globe, Handshake, History, Mail, MapPin, Phone, Smartphone, Target, TrendingUp } from "lucide-react";
 import { isManager, requireSession } from "@/lib/auth/session";
 import { ctxOf, listMembers } from "@/lib/services/context";
 import { getLead } from "@/lib/services/leads";
-import { SOURCES, scoreTier } from "@/lib/domain/scoring";
+import { SOURCES } from "@/lib/domain/scoring";
 import { localTimeLabel, tzShort } from "@/lib/domain/time";
-import { fmtDateTime, fmtMoney, fmtPhone, fmtRelative } from "@/lib/format";
-import { ScoreBadge, StatusBadge } from "@/components/app/lead-badges";
+import { fmtDateTime, fmtMoney, fmtPhone, fmtRelative, initials } from "@/lib/format";
+import { DispositionBadge, StatusBadge, TempBadge } from "@/components/app/lead-badges";
 import { Timeline } from "@/components/app/timeline";
 import { NewTaskButton, TaskItem } from "@/components/app/task-list";
-import { Badge } from "@/components/ui";
+import { Badge, Panel } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { LeadActions, NoteComposer } from "./lead-client";
 import { CreateDealButton } from "../../pipeline/[id]/deal-client";
@@ -23,15 +23,13 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: l ? `${l.contact.firstName} ${l.contact.lastName}` : "Lead" };
 }
 
-function Section({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
+const SIGNAL_KEYS = new Set(["source", "fresh", "connected", "interest", "qualified"]);
+
+function Subhead({ icon: Icon, children }: { icon: typeof Phone; children: React.ReactNode }) {
   return (
-    <section className="rounded-lg border border-line bg-white">
-      <header className="flex items-center justify-between border-b border-line px-4 py-2.5">
-        <h2 className="text-[13px] font-semibold text-ink">{title}</h2>
-        {action}
-      </header>
-      {children}
-    </section>
+    <h2 className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-faint">
+      <Icon className="h-3 w-3" aria-hidden /> {children}
+    </h2>
   );
 }
 
@@ -45,47 +43,80 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
   const tz = session.org.timezone;
   const { contact: c, company: co, lead: l } = lead;
   const now = new Date();
-  const tier = scoreTier(l.score);
   const blocked = c.doNotCall || c.phoneInvalid || !(c.phone || c.mobile);
   const done = l.status === "unqualified" || l.status === "converted";
   const dueNow = !done && !blocked && l.nextActionType !== "none" && (!l.nextActionAt || l.nextActionAt <= now);
+  const openDeal = lead.deals.find((d) => d.stage.kind === "open");
+  const signals = l.scoreFactors.filter((f) => f.points > 0 && SIGNAL_KEYS.has(f.key));
+  const fit = l.scoreFactors.filter((f) => f.points > 0 && !SIGNAL_KEYS.has(f.key));
+  const risks = l.scoreFactors.filter((f) => f.points < 0);
+  const lastCall = lead.timeline.find((t) => t.a.type === "call");
+
+  const nextTitle = done
+    ? l.status === "converted"
+      ? "Customer — nothing to do here"
+      : `Unqualified${l.unqualifiedReason ? `: ${l.unqualifiedReason}` : ""}`
+    : c.doNotCall
+      ? "Do not call"
+      : c.phoneInvalid
+        ? "Find a working number"
+        : l.nextActionType === "none"
+          ? l.status === "qualified"
+            ? "Work the deal"
+            : "No action scheduled"
+          : `${l.nextActionType === "callback" ? "Callback" : l.attemptCount === 0 ? "First call" : `Call (attempt ${l.attemptCount + 1})`} · ${
+              dueNow ? "due now" : fmtDateTime(l.nextActionAt, tz, { weekday: true, date: true, time: true })
+            }`;
 
   return (
-    <div className="px-4 py-5 sm:px-6 lg:px-8">
-      <Link href="/leads" className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-ink">
-        <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Leads
-      </Link>
+    <div className="px-4 py-5 sm:px-6">
+      <nav aria-label="Breadcrumb" className="mb-2 text-xs text-faint">
+        <Link href="/leads" className="hover:text-ink">
+          Leads
+        </Link>
+        <span className="mx-1.5" aria-hidden>
+          /
+        </span>
+        <span className="text-muted">
+          {c.firstName} {c.lastName}
+        </span>
+      </nav>
 
-      <header className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-[22px] font-semibold tracking-tight text-ink">
-              {c.firstName} {c.lastName}
-            </h1>
-            <StatusBadge status={l.status} />
-            <Badge tone={tier.tone}>{tier.label}</Badge>
-            {c.doNotCall && (
-              <Badge tone="red">
-                <Ban className="h-3 w-3" aria-hidden /> Do not call
-              </Badge>
-            )}
+      {/* Identity + actions */}
+      <header className="mb-4 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex min-w-0 items-start gap-3.5">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-brand-500/30 bg-brand-50 text-sm font-semibold text-brand-200" aria-hidden>
+            {initials(`${c.firstName} ${c.lastName}`)}
+          </span>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-[22px] font-semibold leading-[30px] tracking-tight text-ink">
+                {c.firstName} {c.lastName}
+              </h1>
+              <StatusBadge status={l.status} />
+              <TempBadge score={l.score} />
+              {c.doNotCall && (
+                <Badge tone="red">
+                  <Ban className="h-3 w-3" aria-hidden /> Do not call
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-ink-2">
+              {c.title}
+              {co && (
+                <>
+                  <span className="text-faint"> at </span>
+                  <Link href={`/companies/${co.id}`} className="font-medium text-ink hover:text-brand-200">
+                    {co.name}
+                  </Link>
+                </>
+              )}
+            </p>
+            <p className="mt-0.5 text-xs text-faint">
+              {SOURCES[l.source]?.label ?? l.source}
+              {lead.campaign && ` · ${lead.campaign.name}`} · Owner {lead.owner?.name ?? <span className="text-amber-300">Unassigned</span>} · Added {fmtDateTime(l.createdAt, tz, { date: true, time: false })}
+            </p>
           </div>
-          <p className="mt-1 text-sm text-ink-2">
-            {c.title}
-            {co && (
-              <>
-                {" "}
-                at{" "}
-                <Link href={`/companies/${co.id}`} className="font-medium text-ink hover:text-brand-700 hover:underline">
-                  {co.name}
-                </Link>
-              </>
-            )}
-          </p>
-          <p className="mt-1 text-xs text-muted">
-            {SOURCES[l.source]?.label ?? l.source}
-            {lead.campaign && ` · ${lead.campaign.name}`} · Owner: {lead.owner?.name ?? <span className="text-amber-700">Unassigned</span>} · Added {fmtDateTime(l.createdAt, tz, { date: true, time: false })}
-          </p>
         </div>
         <LeadActions
           leadId={l.id}
@@ -100,44 +131,82 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
         />
       </header>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0 space-y-5">
-          {/* What should I do, and why */}
+      {/* Key facts */}
+      <dl className="mb-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-line bg-line sm:grid-cols-3 lg:grid-cols-5">
+        <div className="bg-surface px-4 py-2.5">
+          <dt className="text-[11px] text-faint">Lead score</dt>
+          <dd className="tabular mt-0.5 text-lg font-semibold text-ink">
+            {l.score}
+            <span className="text-xs font-normal text-faint">/100</span>
+          </dd>
+        </div>
+        <div className="bg-surface px-4 py-2.5">
+          <dt className="text-[11px] text-faint">Calls</dt>
+          <dd className="tabular mt-0.5 text-lg font-semibold text-ink">
+            {l.attemptCount} <span className="text-xs font-normal text-faint">· {l.connectCount} reached</span>
+          </dd>
+        </div>
+        <div className="bg-surface px-4 py-2.5">
+          <dt className="text-[11px] text-faint">Last touch</dt>
+          <dd className="mt-1 flex items-center gap-2 text-[13px] text-ink" suppressHydrationWarning>
+            {lastCall ? (
+              <>
+                <DispositionBadge disposition={lastCall.a.disposition} /> {fmtRelative(lastCall.a.occurredAt)}
+              </>
+            ) : (
+              <span className="text-muted">Never contacted</span>
+            )}
+          </dd>
+        </div>
+        <div className="bg-surface px-4 py-2.5">
+          <dt className="text-[11px] text-faint">Their local time</dt>
+          <dd className={cn("mt-1 text-[13px] font-medium", lead.ranked.callableNow ? "text-emerald-300" : "text-amber-300")} suppressHydrationWarning>
+            {localTimeLabel(now, c.timezone)} {tzShort(c.timezone, now)}
+            <span className="ml-1.5 text-xs font-normal text-faint">{lead.ranked.callableNow ? "calling hours" : "after hours"}</span>
+          </dd>
+        </div>
+        <div className="bg-surface px-4 py-2.5">
+          <dt className="text-[11px] text-faint">Pipeline</dt>
+          <dd className="mt-1 text-[13px] text-ink">
+            {openDeal ? (
+              <Link href={`/pipeline/${openDeal.deal.id}`} className="hover:text-brand-200">
+                <span className="tabular font-semibold">{fmtMoney(openDeal.deal.value, true)}</span> <span className="text-faint">· {openDeal.stage.name}</span>
+              </Link>
+            ) : (
+              <span className="text-muted">No open deal</span>
+            )}
+          </dd>
+        </div>
+      </dl>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="min-w-0 space-y-4">
+          {/* Next action: what to do and why */}
           <section
             aria-label="Next action"
-            className={cn("rounded-lg border px-4 py-3.5", dueNow ? "border-brand-300 bg-brand-50" : blocked && !done ? "border-red-200 bg-red-50" : "border-line bg-white")}
+            className={cn(
+              "rounded-lg border px-4 py-3",
+              dueNow ? "border-brand-500/40 bg-brand-50" : blocked && !done ? "border-red-500/30 bg-red-500/10" : "border-line bg-surface",
+            )}
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-muted">Next action</div>
-                <div className="mt-0.5 text-[15px] font-semibold text-ink">
-                  {done
-                    ? l.status === "converted"
-                      ? "Customer — nothing to do here"
-                      : `Unqualified${l.unqualifiedReason ? `: ${l.unqualifiedReason}` : ""}`
-                    : c.doNotCall
-                      ? "Do not call"
-                      : c.phoneInvalid
-                        ? "Find a working number"
-                        : l.nextActionType === "none"
-                          ? l.status === "qualified"
-                            ? "Work the deal"
-                            : "No action scheduled"
-                          : `${l.nextActionType === "callback" ? "Callback" : l.attemptCount === 0 ? "First call" : `Call (attempt ${l.attemptCount + 1})`} · ${
-                              dueNow ? "due now" : fmtDateTime(l.nextActionAt, tz, { weekday: true, date: true, time: true })
-                            }`}
+              <div className="flex min-w-0 items-start gap-3">
+                <Target className={cn("mt-0.5 h-4 w-4 shrink-0", dueNow ? "text-brand-300" : "text-faint")} aria-hidden />
+                <div className="min-w-0">
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-faint">Next action</div>
+                  <div className="mt-0.5 text-[15px] font-semibold text-ink">{nextTitle}</div>
+                  {l.nextActionReason && !done && <p className="mt-0.5 text-[13px] text-ink-2">{l.nextActionReason}</p>}
+                  {c.phoneInvalid && !done && (
+                    <p className="mt-1 flex items-center gap-1.5 text-[13px] text-red-200">
+                      <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Last call reached the wrong number. Edit the contact to re-queue.
+                    </p>
+                  )}
                 </div>
-                {l.nextActionReason && !done && <p className="mt-0.5 text-[13px] text-ink-2">{l.nextActionReason}</p>}
-                {c.phoneInvalid && !done && (
-                  <p className="mt-1 flex items-center gap-1.5 text-[13px] text-red-800">
-                    <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> Last call reached the wrong number. Edit the contact to re-queue.
-                  </p>
-                )}
               </div>
               {!done && !blocked && (
                 <ul className="flex flex-wrap gap-1.5" aria-label="Why this lead">
                   {lead.ranked.reasons.slice(0, 3).map((r) => (
-                    <li key={r} className="rounded-full bg-white/80 px-2 py-0.5 text-xs text-ink-2 ring-1 ring-line">
+                    <li key={r} className="rounded-full border border-line bg-surface px-2 py-0.5 text-xs text-ink-2">
                       {r}
                     </li>
                   ))}
@@ -146,64 +215,105 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
             </div>
           </section>
 
-          <Section title="Activity">
+          <Panel title="Activity" icon={History} description="Calls, notes, status and pipeline changes">
             <NoteComposer leadId={l.id} />
             <Timeline items={lead.timeline} tz={tz} />
-          </Section>
+          </Panel>
         </div>
 
-        <aside className="space-y-5" aria-label="Lead details">
-          <Section title="Contact">
-            <dl className="space-y-2.5 px-4 py-3 text-[13px]">
-              {[
-                { icon: Phone, label: "Direct", value: c.phone, href: c.phone ? `/desk?lead=${l.id}` : null, phone: true },
-                { icon: Smartphone, label: "Mobile", value: c.mobile, href: c.mobile ? `/desk?lead=${l.id}` : null, phone: true },
-                { icon: Mail, label: "Email", value: c.email, href: c.email ? `mailto:${c.email}` : null },
-                { icon: ExternalLink, label: "LinkedIn", value: c.linkedinUrl ? "Profile" : null, href: c.linkedinUrl },
-              ].map((r) => (
-                <div key={r.label} className="flex items-center gap-2.5">
-                  <r.icon className="h-3.5 w-3.5 shrink-0 text-faint" aria-hidden />
-                  <dt className="w-14 shrink-0 text-xs text-muted">{r.label}</dt>
-                  <dd className={cn("min-w-0 truncate", r.phone && c.phoneInvalid && "text-red-700 line-through")}>
-                    {r.value && r.href ? (
-                      <a href={r.href} className="text-ink hover:text-brand-700 hover:underline" {...(r.label === "LinkedIn" ? { target: "_blank", rel: "noreferrer" } : {})}>
-                        {r.phone ? fmtPhone(r.value) : r.value}
-                      </a>
-                    ) : (
-                      <span className="text-faint">—</span>
-                    )}
-                  </dd>
-                </div>
-              ))}
-              <div className="flex items-center gap-2.5">
-                <Clock className="h-3.5 w-3.5 shrink-0 text-faint" aria-hidden />
-                <dt className="w-14 shrink-0 text-xs text-muted">Local</dt>
-                <dd suppressHydrationWarning>
-                  {localTimeLabel(now, c.timezone)} {tzShort(c.timezone, now)}
-                  {!lead.ranked.callableNow && <span className="ml-1.5 text-xs text-amber-700">outside calling hours</span>}
-                </dd>
-              </div>
-            </dl>
-          </Section>
+        <aside className="space-y-4" aria-label="Lead details">
+          {/* Profile: contact, signals, research — one compact card */}
+          <div className="divide-y divide-line rounded-lg border border-line bg-surface shadow-card">
+            <section className="px-4 py-3">
+              <Subhead icon={Phone}>Contact</Subhead>
+              <dl className="space-y-1.5 text-[13px]">
+                {[
+                  { icon: Phone, label: "Direct", value: c.phone ? fmtPhone(c.phone) : null, href: c.phone ? `/desk?lead=${l.id}` : null, phone: true },
+                  { icon: Smartphone, label: "Mobile", value: c.mobile ? fmtPhone(c.mobile) : null, href: c.mobile ? `/desk?lead=${l.id}` : null, phone: true },
+                  { icon: Mail, label: "Email", value: c.email, href: c.email ? `mailto:${c.email}` : null },
+                  { icon: ExternalLink, label: "LinkedIn", value: c.linkedinUrl ? "Profile" : null, href: c.linkedinUrl, external: true },
+                ].map((r) => (
+                  <div key={r.label} className="flex items-center gap-2.5">
+                    <r.icon className="h-3.5 w-3.5 shrink-0 text-faint" strokeWidth={1.75} aria-hidden />
+                    <dt className="w-14 shrink-0 text-xs text-faint">{r.label}</dt>
+                    <dd className={cn("min-w-0 truncate", r.phone && c.phoneInvalid && "text-red-300 line-through")}>
+                      {r.value && r.href ? (
+                        <a href={r.href} className="text-ink hover:text-brand-200" {...(r.external ? { target: "_blank", rel: "noreferrer" } : {})}>
+                          {r.value}
+                        </a>
+                      ) : (
+                        <span className="text-faint">—</span>
+                      )}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
 
-          <Section title="Lead score" action={<ScoreBadge score={l.score} />}>
-            <ul className="px-4 py-3 text-[13px]">
-              {l.scoreFactors.length === 0 && <li className="text-muted">No scoring signals yet.</li>}
-              {l.scoreFactors.map((f) => (
-                <li key={f.key} className="flex items-center justify-between gap-3 py-0.5">
-                  <span className="text-ink-2">{f.label}</span>
-                  <span className={cn("tabular font-medium", f.points > 0 ? "text-emerald-700" : "text-red-700")}>
-                    {f.points > 0 ? "+" : ""}
-                    {f.points}
+            <section className="px-4 py-3">
+              <Subhead icon={TrendingUp}>Buying signals &amp; fit</Subhead>
+              {l.scoreFactors.length === 0 ? (
+                <p className="text-[13px] text-muted">No scoring signals yet.</p>
+              ) : (
+                <ul className="space-y-1 text-[13px]">
+                  {[...signals.map((f) => ({ ...f, kind: "signal" })), ...fit.map((f) => ({ ...f, kind: "fit" })), ...risks.map((f) => ({ ...f, kind: "risk" }))].map((f) => (
+                    <li key={f.key} className="flex items-center justify-between gap-3">
+                      <span className="flex min-w-0 items-center gap-2 text-ink-2">
+                        <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", f.kind === "signal" ? "bg-emerald-400" : f.kind === "fit" ? "bg-slate-400" : "bg-amber-400")} aria-hidden />
+                        <span className="truncate">{f.label}</span>
+                        <span className="sr-only">({f.kind === "signal" ? "buying signal" : f.kind === "fit" ? "fit" : "risk"})</span>
+                      </span>
+                      <span className={cn("tabular shrink-0 text-xs font-medium", f.points > 0 ? "text-emerald-300" : "text-red-300")}>
+                        {f.points > 0 ? "+" : ""}
+                        {f.points}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {co && (
+              <section className="px-4 py-3">
+                <Subhead icon={Globe}>Research</Subhead>
+                <Link href={`/companies/${co.id}`} className="text-[13px] font-medium text-ink hover:text-brand-200">
+                  {co.name}
+                </Link>
+                <p className="mt-0.5 text-xs text-ink-2">{[co.industry, co.employeeCount && `${co.employeeCount.toLocaleString()} employees`, co.annualRevenue && `${fmtMoney(co.annualRevenue, true)} revenue`].filter(Boolean).join(" · ")}</p>
+                <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-muted">
+                  <span className="inline-flex items-center gap-1">
+                    <MapPin className="h-3 w-3" aria-hidden /> {co.city}, {co.state}
                   </span>
-                </li>
-              ))}
-            </ul>
-          </Section>
+                  {co.domain && (
+                    <a href={`https://${co.domain}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-brand-200">
+                      <Globe className="h-3 w-3" aria-hidden /> {co.domain}
+                    </a>
+                  )}
+                </p>
+                {co.description && <p className="mt-1.5 text-xs leading-relaxed text-muted">{co.description}</p>}
+                {lead.colleagues.length > 0 && (
+                  <div className="mt-2.5 border-t border-line pt-2">
+                    <div className="mb-1 text-[11px] text-faint">Also at {co.name}</div>
+                    <ul className="space-y-1">
+                      {lead.colleagues.map((p) => (
+                        <li key={p.leadId} className="flex items-center justify-between gap-2 text-[13px]">
+                          <Link href={`/leads/${p.leadId}`} className="min-w-0 truncate text-ink-2 hover:text-brand-200">
+                            {p.firstName} {p.lastName}
+                            <span className="text-xs text-faint"> · {p.title}</span>
+                          </Link>
+                          <StatusBadge status={p.status} />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
 
-          <Section title="Tasks" action={lead.canWork ? <NewTaskButton tz={tz} leadId={l.id} defaultTitle={`Follow up with ${c.firstName}`} /> : undefined}>
+          <Panel title="Follow-ups" icon={CheckSquare} actions={lead.canWork ? <NewTaskButton tz={tz} leadId={l.id} defaultTitle={`Follow up with ${c.firstName}`} /> : undefined}>
             {lead.openTasks.length === 0 ? (
-              <p className="px-4 py-3 text-[13px] text-muted">No open tasks.</p>
+              <p className="px-4 py-3 text-[13px] text-muted">No open follow-ups.</p>
             ) : (
               <ul className="divide-y divide-line/70">
                 {lead.openTasks.map(({ task, assignee }) => (
@@ -211,35 +321,38 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
                 ))}
               </ul>
             )}
-          </Section>
+          </Panel>
 
           {(lead.deals.length > 0 || (lead.canWork && !done)) && (
-            <Section
+            <Panel
               title="Deals"
-              action={lead.canWork && !done && !lead.deals.some((d) => d.stage.kind === "open") ? <CreateDealButton leadId={l.id} /> : undefined}
+              icon={Handshake}
+              actions={lead.canWork && !done && !openDeal ? <CreateDealButton leadId={l.id} /> : undefined}
             >
               {lead.deals.length === 0 ? (
                 <p className="px-4 py-3 text-[13px] text-muted">Booking a meeting from the Calling Desk opens a deal automatically.</p>
               ) : (
                 <ul className="divide-y divide-line/70">
                   {lead.deals.map(({ deal, stage }) => (
-                    <li key={deal.id} className="px-4 py-3">
-                      <Link href={`/pipeline/${deal.id}`} className="text-[13px] font-medium text-ink hover:text-brand-700 hover:underline">
-                        {deal.name}
-                      </Link>
-                      <div className="mt-0.5 flex items-center gap-2 text-xs text-muted">
-                        <Badge tone={stage.kind === "won" ? "green" : stage.kind === "lost" ? "red" : "violet"}>{stage.name}</Badge>
-                        <span className="tabular">{fmtMoney(deal.value)}</span>
-                      </div>
+                    <li key={deal.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                      <span className="min-w-0">
+                        <Link href={`/pipeline/${deal.id}`} className="block truncate text-[13px] font-medium text-ink hover:text-brand-200">
+                          {deal.name}
+                        </Link>
+                        <Badge tone={stage.kind === "won" ? "green" : stage.kind === "lost" ? "red" : "violet"} className="mt-1">
+                          {stage.name}
+                        </Badge>
+                      </span>
+                      <span className="tabular shrink-0 text-[13px] font-semibold text-ink">{fmtMoney(deal.value)}</span>
                     </li>
                   ))}
                 </ul>
               )}
-            </Section>
+            </Panel>
           )}
 
           {lead.meetings.length > 0 && (
-            <Section title="Meetings">
+            <Panel title="Meetings" icon={CalendarClock}>
               <ul className="divide-y divide-line/70">
                 {lead.meetings.map((m) => (
                   <li key={m.id} className="flex items-center justify-between gap-3 px-4 py-2.5 text-[13px]">
@@ -250,44 +363,11 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
                   </li>
                 ))}
               </ul>
-            </Section>
+            </Panel>
           )}
 
-          {co && (
-            <Section title="Company">
-              <div className="space-y-2 px-4 py-3 text-[13px]">
-                <Link href={`/companies/${co.id}`} className="flex items-center gap-2 font-medium text-ink hover:text-brand-700 hover:underline">
-                  <Building2 className="h-3.5 w-3.5 text-faint" aria-hidden /> {co.name}
-                </Link>
-                <p className="text-ink-2">{[co.industry, co.employeeCount && `${co.employeeCount} employees`, co.annualRevenue && `${fmtMoney(co.annualRevenue, true)} revenue`].filter(Boolean).join(" · ")}</p>
-                <p className="flex items-center gap-1.5 text-muted">
-                  <MapPin className="h-3.5 w-3.5" aria-hidden /> {co.city}, {co.state}
-                </p>
-                {lead.colleagues.length > 0 && (
-                  <div className="border-t border-line pt-2">
-                    <div className="mb-1 flex items-center gap-1.5 text-xs text-muted">
-                      <Users className="h-3.5 w-3.5" aria-hidden /> Also at {co.name}
-                    </div>
-                    <ul className="space-y-1">
-                      {lead.colleagues.map((p) => (
-                        <li key={p.leadId} className="flex items-center justify-between gap-2">
-                          <Link href={`/leads/${p.leadId}`} className="truncate text-ink hover:text-brand-700 hover:underline">
-                            {p.firstName} {p.lastName}
-                            <span className="text-xs text-muted"> · {p.title}</span>
-                          </Link>
-                          <StatusBadge status={p.status} />
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            </Section>
-          )}
-
-          <p className="px-1 text-xs text-faint" suppressHydrationWarning>
-            {l.attemptCount} call attempt{l.attemptCount === 1 ? "" : "s"} · {l.connectCount} connect{l.connectCount === 1 ? "" : "s"}
-            {l.lastContactedAt && ` · last ${fmtRelative(l.lastContactedAt)}`}
+          <p className="flex items-center gap-1.5 px-1 text-[11px] text-faint" suppressHydrationWarning>
+            <Clock className="h-3 w-3" aria-hidden /> Updated {fmtRelative(l.updatedAt)}
           </p>
         </aside>
       </div>

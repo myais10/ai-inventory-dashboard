@@ -2,11 +2,11 @@
 
 import Link from "@/components/ui/link";
 import { useEffect, useState, useTransition } from "react";
-import { AlertCircle, CalendarClock } from "lucide-react";
+import { AlertCircle, ArrowRight, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui";
 import { Dialog } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/toast";
-import { fmtDateTime, fmtMoney, initials } from "@/lib/format";
+import { fmtDateTime, fmtMoney, fmtRelative, initials } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { moveDealAction } from "./actions";
 
@@ -34,6 +34,7 @@ export interface CardDeal {
   overdueTasks: number;
   closedAt: string | null;
   lostReason: string | null;
+  lastActivityAt: string | null;
 }
 
 function daysSince(iso: string) {
@@ -46,6 +47,7 @@ export function Board({ stages, deals: initial, tz, userId, isManager }: { stage
   const [dragId, setDragId] = useState<string | null>(null);
   const [overStage, setOverStage] = useState<string | null>(null);
   const [lostFor, setLostFor] = useState<{ dealId: string; stageId: string } | null>(null);
+  const [justMoved, setJustMoved] = useState<string | null>(null);
   const [, start] = useTransition();
   useEffect(() => setDeals(initial), [initial]);
 
@@ -61,7 +63,10 @@ export function Board({ stages, deals: initial, tz, userId, isManager }: { stage
     setDeals((ds) => ds.map((d) => (d.id === dealId ? { ...d, stageId, stageChangedAt: new Date().toISOString(), closedAt: to.kind === "open" ? null : new Date().toISOString(), lostReason: reason ?? null } : d)));
     start(async () => {
       const r = await moveDealAction(dealId, stageId, reason);
-      if (r.ok) toast("success", `${deal.company ?? deal.name} → ${to.name}`);
+      if (r.ok) {
+        toast("success", `${deal.company ?? deal.name} → ${to.name}`);
+        setJustMoved(dealId);
+      }
       else {
         setDeals(prev);
         toast("error", r.error);
@@ -71,7 +76,7 @@ export function Board({ stages, deals: initial, tz, userId, isManager }: { stage
 
   return (
     <>
-      <div className="-mx-4 flex flex-1 gap-3 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8" role="list" aria-label="Pipeline stages">
+      <div className="-mx-4 flex flex-1 gap-2.5 relative overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6" role="list" aria-label="Pipeline stages">
         {stages.map((stage) => {
           const items = deals.filter((d) => d.stageId === stage.id);
           const total = items.reduce((a, d) => a + d.value, 0);
@@ -94,24 +99,26 @@ export function Board({ stages, deals: initial, tz, userId, isManager }: { stage
                 setOverStage(null);
               }}
               className={cn(
-                "flex w-[272px] shrink-0 flex-col rounded-lg border bg-subtle transition-colors",
-                closed && "w-[232px]",
+                "flex w-[268px] shrink-0 flex-col rounded-lg border bg-surface transition-colors",
+                closed && "w-[220px]",
                 overStage === stage.id ? "border-brand-500 bg-brand-50" : "border-line",
               )}
             >
               <header className="border-b border-line px-3 py-2.5">
-                <div className="flex items-center justify-between">
-                  <h2 className={cn("text-[13px] font-semibold", stage.kind === "won" ? "text-emerald-700" : stage.kind === "lost" ? "text-red-700" : "text-ink")}>{stage.name}</h2>
-                  <span className="tabular text-xs text-muted">{items.length}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <h2 className="flex items-center gap-2 text-[13px] font-semibold text-ink">
+                    <span className={cn("h-2 w-2 rounded-full", stage.kind === "won" ? "bg-emerald-400" : stage.kind === "lost" ? "bg-red-400" : "bg-brand-300")} aria-hidden />
+                    {stage.name}
+                  </h2>
+                  <span className="tabular rounded-full bg-subtle px-1.5 text-[11px] text-muted">{items.length}</span>
                 </div>
-                <div className="tabular mt-0.5 text-xs text-muted">
-                  {fmtMoney(total)}
-                  {stage.kind === "open" && ` · ${stage.probability}% → ${fmtMoney((total * stage.probability) / 100)}`}
-                  {closed && " · last 30 days"}
+                <div className="tabular mt-1 flex items-baseline justify-between text-xs">
+                  <span className="font-semibold text-ink">{fmtMoney(total, true)}</span>
+                  <span className="text-faint">{stage.kind === "open" ? `${stage.probability}% · ${fmtMoney((total * stage.probability) / 100, true)} weighted` : "last 30 days"}</span>
                 </div>
               </header>
-              <ol className="flex-1 space-y-2 overflow-y-auto p-2" style={{ maxHeight: "calc(100vh - 290px)" }}>
-                {items.length === 0 && <li className="px-2 py-6 text-center text-xs text-faint">{closed ? "None in the last 30 days" : "Drop deals here"}</li>}
+              <ol className="flex-1 space-y-1.5 overflow-y-auto p-2" style={{ maxHeight: "calc(100vh - 290px)" }}>
+                {items.length === 0 && <li className="rounded-md border border-dashed border-line px-2 py-6 text-center text-xs text-faint">{closed ? "None in the last 30 days" : "Drop deals here"}</li>}
                 {items.map((d) => {
                   const age = daysSince(d.stageChangedAt);
                   const stale = !closed && age >= 14;
@@ -127,39 +134,57 @@ export function Board({ stages, deals: initial, tz, userId, isManager }: { stage
                         setDragId(null);
                         setOverStage(null);
                       }}
-                      className={cn("rounded-md border border-line bg-white p-2.5 shadow-[0_1px_2px_rgba(16,24,40,0.05)]", canMove(d) && "cursor-grab active:cursor-grabbing", dragId === d.id && "opacity-50")}
+                      onAnimationEnd={() => justMoved === d.id && setJustMoved(null)}
+                      className={cn(
+                        "rounded-md border border-line bg-subtle p-2.5 transition-colors hover:border-line-strong",
+                        canMove(d) && "cursor-grab active:cursor-grabbing",
+                        dragId === d.id && "opacity-40",
+                        justMoved === d.id && "animate-flash",
+                      )}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <Link href={`/pipeline/${d.id}`} className="min-w-0 text-[13px] font-medium leading-snug text-ink hover:text-brand-700 hover:underline">
+                        <Link href={`/pipeline/${d.id}`} className="min-w-0 text-[13px] font-medium leading-snug text-ink hover:text-brand-200">
                           {d.company ?? d.name}
                         </Link>
                         <span className="tabular shrink-0 text-[13px] font-semibold text-ink">{fmtMoney(d.value, true)}</span>
                       </div>
                       {d.contact && <div className="mt-0.5 truncate text-xs text-muted">{d.contact}</div>}
                       {!closed && (
-                        <div className="mt-1.5 space-y-1 text-[11.5px]">
+                        <div className="mt-2 space-y-1 text-[11.5px]">
                           {d.nextMeetingAt ? (
-                            <div className="flex items-center gap-1 text-violet-700" suppressHydrationWarning>
-                              <CalendarClock className="h-3 w-3" aria-hidden /> Meeting {fmtDateTime(d.nextMeetingAt, tz, { weekday: true, date: true, time: true })}
+                            <div className="flex items-center gap-1.5 text-violet-300" suppressHydrationWarning>
+                              <CalendarClock className="h-3 w-3 shrink-0" aria-hidden /> Meeting {fmtDateTime(d.nextMeetingAt, tz, { weekday: true, date: true, time: true })}
+                            </div>
+                          ) : d.nextStep ? (
+                            <div className="flex items-center gap-1.5 text-ink-2">
+                              <ArrowRight className="h-3 w-3 shrink-0 text-faint" aria-hidden />
+                              <span className="truncate">{d.nextStep}</span>
                             </div>
                           ) : (
-                            d.nextStep && <div className="truncate text-ink-2">Next: {d.nextStep}</div>
+                            <div className="flex items-center gap-1.5 text-amber-300">
+                              <AlertCircle className="h-3 w-3 shrink-0" aria-hidden /> No next step
+                            </div>
+                          )}
+                          {d.lastActivityAt && (
+                            <div className="text-faint" suppressHydrationWarning>
+                              Last activity {fmtRelative(d.lastActivityAt)}
+                            </div>
                           )}
                           {d.overdueTasks > 0 && (
-                            <div className="flex items-center gap-1 text-red-700">
-                              <AlertCircle className="h-3 w-3" aria-hidden /> {d.overdueTasks} overdue task{d.overdueTasks > 1 ? "s" : ""}
+                            <div className="flex items-center gap-1.5 text-red-300">
+                              <AlertCircle className="h-3 w-3 shrink-0" aria-hidden /> {d.overdueTasks} overdue task{d.overdueTasks > 1 ? "s" : ""}
                             </div>
                           )}
                         </div>
                       )}
                       {closed && d.lostReason && <div className="mt-1 truncate text-[11.5px] text-muted">{d.lostReason}</div>}
-                      <div className="mt-2 flex items-center justify-between gap-2">
-                        <span className="flex items-center gap-1.5">
-                          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-[9px] font-semibold text-ink-2" title={d.owner ?? ""}>
+                      <div className="mt-2 flex items-center justify-between gap-2 border-t border-line pt-2">
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-brand-100 text-[9px] font-semibold text-brand-200" title={d.owner ?? ""}>
                             {d.owner ? initials(d.owner) : "?"}
                           </span>
-                          <span className={cn("text-[11px]", stale ? "font-medium text-amber-700" : "text-faint")} suppressHydrationWarning>
-                            {closed ? "" : `${age}d in stage`}
+                          <span className={cn("truncate text-[11px]", stale ? "font-medium text-amber-300" : "text-faint")} suppressHydrationWarning>
+                            {closed ? (d.closedAt ? `Closed ${fmtRelative(d.closedAt)}` : "") : `${age}d in stage`}
                           </span>
                         </span>
                         {canMove(d) && (
@@ -171,7 +196,7 @@ export function Board({ stages, deals: initial, tz, userId, isManager }: { stage
                               id={`mv-${d.id}`}
                               value={d.stageId}
                               onChange={(e) => move(d.id, e.target.value)}
-                              className="h-6 max-w-[110px] rounded border border-line bg-white px-1 text-[11px] text-ink-2"
+                              className="h-6 max-w-[96px] shrink-0 rounded border border-line-strong bg-surface px-1 text-[11px] text-ink-2"
                             >
                               {stages.map((s) => (
                                 <option key={s.id} value={s.id}>

@@ -21,5 +21,5 @@ test("rep lands on desk, manager lands on team", async ({ page, context }) => {
   await expect(page).toHaveURL(/\/desk/);
   await context.clearCookies();
   await login(page, "dana@brightline.demo");
-  await expect(page).toHaveURL(/\/team/);
+  await expect(page).toHaveURL(/\/sales-floor/);
 });

@@ -22,9 +22,25 @@ function useAction() {
   return { pending, exec };
 }
 
-const TZ = ["America/New_York", "America/Chicago", "America/Denver", "America/Phoenix", "America/Los_Angeles", "Europe/London", "Europe/Berlin", "Asia/Kolkata", "Australia/Sydney"];
+const TZ = [
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Phoenix",
+  "America/Los_Angeles",
+  "Europe/London",
+  "Europe/Berlin",
+  "Asia/Kolkata",
+  "Australia/Sydney",
+];
 
-export function WorkspaceForm({ canEdit, initial }: { canEdit: boolean; initial: { name: string; timezone: string; icpIndustries: string; icpMinEmployees: number; icpMaxEmployees: number } }) {
+export function WorkspaceForm({
+  canEdit,
+  initial,
+}: {
+  canEdit: boolean;
+  initial: { name: string; timezone: string; icpIndustries: string; icpMinEmployees: number; icpMaxEmployees: number };
+}) {
   const { pending, exec } = useAction();
   return (
     <form action={(fd) => exec(() => updateWorkspaceAction(Object.fromEntries(fd) as Record<string, string>))} className="space-y-3">
@@ -68,7 +84,15 @@ export function WorkspaceForm({ canEdit, initial }: { canEdit: boolean; initial:
   );
 }
 
-export function MembersPanel({ members, canEdit, selfId }: { members: { id: string; name: string; email: string; role: string; title: string | null }[]; canEdit: boolean; selfId: string }) {
+export function MembersPanel({
+  members,
+  canEdit,
+  selfId,
+}: {
+  members: { id: string; name: string; email: string; role: string; title: string | null }[];
+  canEdit: boolean;
+  selfId: string;
+}) {
   const { pending, exec } = useAction();
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
@@ -91,7 +115,13 @@ export function MembersPanel({ members, canEdit, selfId }: { members: { id: stri
                 <label htmlFor={`role-${m.id}`} className="sr-only">
                   Role for {m.name}
                 </label>
-                <select id={`role-${m.id}`} defaultValue={m.role} disabled={pending} onChange={(e) => exec(() => updateMemberRoleAction(m.id, e.target.value))} className="h-8 rounded-md border border-line-strong bg-white px-2 text-[13px]">
+                <select
+                  id={`role-${m.id}`}
+                  defaultValue={m.role}
+                  disabled={pending}
+                  onChange={(e) => exec(() => updateMemberRoleAction(m.id, e.target.value))}
+                  className="h-8 rounded-md border border-line-strong bg-subtle px-2 text-[13px] text-ink"
+                >
                   <option value="rep">Rep</option>
                   <option value="manager">Manager</option>
                   <option value="owner">Owner</option>
@@ -111,8 +141,21 @@ export function MembersPanel({ members, canEdit, selfId }: { members: { id: stri
           <Button onClick={() => setAdding(true)}>Add member</Button>
         </div>
       )}
-      <Dialog open={adding} onClose={() => setAdding(false)} title="Add a team member" description="They sign in with this email and temporary password, then change it under Your profile.">
-        <form action={(fd) => exec(() => addMemberAction(Object.fromEntries(fd) as Record<string, string>), () => setAdding(false))} className="space-y-3">
+      <Dialog
+        open={adding}
+        onClose={() => setAdding(false)}
+        title="Add a team member"
+        description="They sign in with this email and temporary password, then change it under Your profile."
+      >
+        <form
+          action={(fd) =>
+            exec(
+              () => addMemberAction(Object.fromEntries(fd) as Record<string, string>),
+              () => setAdding(false),
+            )
+          }
+          className="space-y-3"
+        >
           <Field label="Full name" htmlFor="m-name">
             <Input id="m-name" name="name" required data-autofocus />
           </Field>
@@ -154,7 +197,18 @@ export function MembersPanel({ members, canEdit, selfId }: { members: { id: stri
             <Button variant="ghost" onClick={() => setRemoving(null)}>
               Cancel
             </Button>
-            <Button variant="danger" disabled={pending} onClick={() => removing && exec(() => removeMemberAction(removing.id), () => setRemoving(null))} data-autofocus>
+            <Button
+              variant="danger"
+              disabled={pending}
+              onClick={() =>
+                removing &&
+                exec(
+                  () => removeMemberAction(removing.id),
+                  () => setRemoving(null),
+                )
+              }
+              data-autofocus
+            >
               Remove
             </Button>
           </>
@@ -198,7 +252,12 @@ export function DataPanel({ canEdit }: { canEdit: boolean }) {
               variant={confirm === "clear" ? "danger" : "primary"}
               disabled={pending}
               data-autofocus
-              onClick={() => exec(() => (confirm === "reset" ? resetDemoAction() : clearDataAction()), () => setConfirm(null))}
+              onClick={() =>
+                exec(
+                  () => (confirm === "reset" ? resetDemoAction() : clearDataAction()),
+                  () => setConfirm(null),
+                )
+              }
             >
               {pending ? "Working…" : confirm === "reset" ? "Regenerate" : "Delete everything"}
             </Button>

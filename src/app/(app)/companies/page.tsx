@@ -4,7 +4,8 @@ import { requireSession } from "@/lib/auth/session";
 import { ctxOf } from "@/lib/services/context";
 import { companyIndustries, listCompanies } from "@/lib/services/companies";
 import { ScoreBadge } from "@/components/app/lead-badges";
-import { Badge } from "@/components/ui";
+import { Badge, PageHeader, buttonClass, thClass } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import { fmtMoney, fmtRelative } from "@/lib/format";
 import { CompanyFilters } from "./filters";
 
@@ -23,24 +24,23 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
   };
 
   return (
-    <div className="px-4 py-6 sm:px-6 lg:px-8">
-      <h1 className="text-[22px] font-semibold tracking-tight text-ink">Companies</h1>
-      <p className="mt-0.5 text-sm text-muted">Accounts with open pipeline first, then by their best lead&apos;s score.</p>
-      <div className="mt-4">
+    <div className="px-4 py-5 sm:px-6">
+      <PageHeader title="Companies" description="Accounts with open pipeline first, then by their best lead's score." className="mb-3" />
+      <div>
         <CompanyFilters q={sp.q ?? ""} industry={sp.industry ?? ""} industries={industries} />
       </div>
-      <div className="overflow-x-auto rounded-lg border border-line bg-white">
+      <div className="relative overflow-x-auto rounded-lg border border-line bg-surface shadow-card">
         <table className="w-full border-collapse text-left text-[13px]">
           <caption className="sr-only">Companies</caption>
           <thead>
-            <tr className="border-b border-line bg-subtle text-[11px] uppercase tracking-wide text-muted">
-              <th scope="col" className="py-2 pl-4 pr-3 font-medium">Company</th>
-              <th scope="col" className="px-3 py-2 font-medium">Industry</th>
-              <th scope="col" className="hidden px-3 py-2 text-right font-medium md:table-cell">Employees</th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">Contacts</th>
-              <th scope="col" className="px-3 py-2 font-medium">Best lead</th>
-              <th scope="col" className="px-3 py-2 text-right font-medium">Open pipeline</th>
-              <th scope="col" className="hidden px-3 py-2 pr-4 font-medium lg:table-cell">Last touch</th>
+            <tr>
+              <th scope="col" className={cn(thClass, "pl-4 pr-3")}>Company</th>
+              <th scope="col" className={cn(thClass, "px-3")}>Industry</th>
+              <th scope="col" className={cn(thClass, "hidden text-right md:table-cell")}>Employees</th>
+              <th scope="col" className={cn(thClass, "px-3 text-right")}>Contacts</th>
+              <th scope="col" className={cn(thClass, "px-3")}>Best lead</th>
+              <th scope="col" className={cn(thClass, "px-3 text-right")}>Open pipeline</th>
+              <th scope="col" className={cn(thClass, "hidden pr-4 lg:table-cell")}>Last touch</th>
             </tr>
           </thead>
           <tbody>
@@ -53,15 +53,15 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
             )}
             {res.rows.map((r) => (
               <tr key={r.company.id} className="border-b border-line/70 last:border-0 hover:bg-subtle">
-                <td className="py-2.5 pl-4 pr-3">
-                  <Link href={`/companies/${r.company.id}`} className="font-medium text-ink hover:text-brand-700 hover:underline">
+                <td className="py-2 pl-4 pr-3">
+                  <Link href={`/companies/${r.company.id}`} className="font-medium text-ink hover:text-brand-200">
                     {r.company.name}
                   </Link>
                   <span className="block text-xs text-muted">
                     {r.company.city}, {r.company.state}
                   </span>
                 </td>
-                <td className="px-3 py-2.5">
+                <td className="px-3 py-2">
                   <span className="text-ink-2">{r.company.industry}</span>
                   {r.company.industry && icp.has(r.company.industry) && (
                     <Badge tone="brand" className="ml-1.5">
@@ -69,13 +69,13 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
                     </Badge>
                   )}
                 </td>
-                <td className="tabular hidden px-3 py-2.5 text-right text-ink-2 md:table-cell">{r.company.employeeCount?.toLocaleString() ?? "—"}</td>
-                <td className="tabular px-3 py-2.5 text-right text-ink-2">{r.leads ?? 0}</td>
-                <td className="px-3 py-2.5">{r.best !== null ? <ScoreBadge score={r.best} /> : "—"}</td>
-                <td className="tabular px-3 py-2.5 text-right">
+                <td className="tabular hidden px-3 py-2 text-right text-ink-2 md:table-cell">{r.company.employeeCount?.toLocaleString() ?? "—"}</td>
+                <td className="tabular px-3 py-2 text-right text-ink-2">{r.leads ?? 0}</td>
+                <td className="px-3 py-2">{r.best !== null ? <ScoreBadge score={r.best} /> : "—"}</td>
+                <td className="tabular px-3 py-2 text-right">
                   {r.openValue ? <span className="font-medium text-ink">{fmtMoney(Number(r.openValue))}</span> : <span className="text-faint">—</span>}
                 </td>
-                <td className="hidden px-3 py-2.5 pr-4 text-xs text-muted lg:table-cell" suppressHydrationWarning>
+                <td className="hidden px-3 py-2 pr-4 text-xs text-muted lg:table-cell" suppressHydrationWarning>
                   {r.lastTouch ? fmtRelative(new Date(r.lastTouch)) : "Never"}
                 </td>
               </tr>
@@ -89,12 +89,12 @@ export default async function CompaniesPage({ searchParams }: { searchParams: Pr
         </span>
         <div className="flex gap-2">
           {res.page > 1 && (
-            <Link className="rounded-md border border-line bg-white px-3 py-1.5 font-medium text-ink-2 hover:bg-subtle" href={pageHref(res.page - 1)}>
+            <Link className={buttonClass("secondary", "md")} href={pageHref(res.page - 1)}>
               Previous
             </Link>
           )}
           {res.page < res.pages && (
-            <Link className="rounded-md border border-line bg-white px-3 py-1.5 font-medium text-ink-2 hover:bg-subtle" href={pageHref(res.page + 1)}>
+            <Link className={buttonClass("secondary", "md")} href={pageHref(res.page + 1)}>
               Next
             </Link>
           )}

@@ -29,14 +29,14 @@ export function ColumnChart({
   return (
     <figure className="m-0">
       <div role="img" aria-label={`${title}. ${bars.length} values; highest ${format(peak.value)} (${peak.label}).`}>
-        <div className="flex items-end gap-[2px] border-b border-line" style={{ height }} aria-hidden>
+        <div className="flex items-end gap-[2px] border-b border-line-strong" style={{ height }} aria-hidden>
           {bars.map((b) => (
             <div key={b.label} className="group relative flex h-full flex-1 items-end" tabIndex={0}>
               <div
-                className={cn("w-full rounded-t-[4px] transition-colors", b.muted ? "bg-slate-200" : "bg-brand-500 group-hover:bg-brand-700 group-focus:bg-brand-700")}
+                className={cn("w-full rounded-t-[4px] transition-colors", b.muted ? "bg-line" : "bg-brand-500 group-hover:bg-brand-500 group-focus:bg-brand-500")}
                 style={{ height: `${Math.max(b.value ? 2 : 0, (b.value / max) * 100)}%` }}
               />
-              <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-night px-2 py-1 text-[11px] text-white shadow-lg group-hover:block group-focus:block">
+              <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded-md border border-line bg-subtle px-2 py-1 text-[11px] text-ink shadow-elevated group-hover:block group-focus:block">
                 <span className="font-medium">{b.label}</span> · {b.tooltip ?? format(b.value)}
               </div>
             </div>

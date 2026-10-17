@@ -20,7 +20,7 @@ interface Values {
   view: string;
 }
 
-const selectCls = "h-8 rounded-md border border-line-strong bg-white px-2 text-[13px] text-ink-2 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-100";
+const selectCls = "h-8 rounded-md border border-line-strong bg-subtle px-2 text-[13px] text-ink outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25";
 
 export function LeadFiltersBar({
   values,
@@ -69,7 +69,7 @@ export function LeadFiltersBar({
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === "Escape" && (e.currentTarget.blur(), q && setQ(""))}
           placeholder="Name, company, title, city, phone…"
-          className="h-8 w-full rounded-md border border-line-strong bg-white pl-8 pr-7 text-[13px] outline-none placeholder:text-faint focus:border-brand-500 focus:ring-2 focus:ring-brand-100"
+          className="h-8 w-full rounded-md border border-line-strong bg-subtle pl-8 pr-7 text-[13px] text-ink outline-none placeholder:text-faint focus:border-brand-500 focus:ring-2 focus:ring-brand-500/25"
         />
         {q && (
           <button type="button" onClick={() => setQ("")} className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-faint hover:text-ink" aria-label="Clear search">

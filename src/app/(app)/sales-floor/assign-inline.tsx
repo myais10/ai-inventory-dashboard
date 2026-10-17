@@ -14,7 +14,7 @@ export function AssignInline({ leadId, reps }: { leadId: string; reps: { id: str
       <label htmlFor={`as-${leadId}`} className="sr-only">
         Assign to
       </label>
-      <select id={`as-${leadId}`} value={to} onChange={(e) => setTo(e.target.value)} className="h-7 flex-1 rounded-md border border-line-strong bg-white px-1.5 text-xs">
+      <select id={`as-${leadId}`} value={to} onChange={(e) => setTo(e.target.value)} className="h-7 flex-1 rounded-md border border-line-strong bg-subtle px-1.5 text-xs text-ink">
         <option value="">Assign to…</option>
         {reps.map((r) => (
           <option key={r.id} value={r.id}>

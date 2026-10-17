@@ -18,7 +18,7 @@ export function AssigneeFilter({ value, members }: { value: string; members: { i
           u.set("assignee", e.target.value);
           router.replace(`/tasks?${u}`);
         }}
-        className="h-9 rounded-lg border border-line-strong bg-white px-2.5 text-sm"
+        className="h-9 rounded-lg border border-line-strong bg-subtle px-2.5 text-sm text-ink"
       >
         <option value="me">My tasks</option>
         <option value="all">Everyone</option>

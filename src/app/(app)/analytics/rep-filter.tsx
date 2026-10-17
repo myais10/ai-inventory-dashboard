@@ -19,7 +19,7 @@ export function RepFilter({ value, reps }: { value: string; reps: { id: string; 
           else u.delete("rep");
           router.replace(`/analytics?${u}`);
         }}
-        className="h-8 rounded-md border border-line-strong bg-white px-2 text-[13px]"
+        className="h-8 rounded-md border border-line-strong bg-subtle px-2 text-[13px] text-ink"
       >
         <option value="">Whole team</option>
         {reps.map((r) => (

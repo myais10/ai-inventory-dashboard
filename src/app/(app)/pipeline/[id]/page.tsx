@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "@/components/ui/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Phone } from "lucide-react";
+import { Phone } from "lucide-react";
 import { requireSession } from "@/lib/auth/session";
 import { ctxOf } from "@/lib/services/context";
 import { getDeal } from "@/lib/services/deals";
@@ -26,10 +26,16 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
   const days = Math.floor((now.getTime() - d.deal.stageChangedAt.getTime()) / 86_400_000);
 
   return (
-    <div className="px-4 py-5 sm:px-6 lg:px-8">
-      <Link href="/pipeline" className="mb-3 inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-ink">
-        <ArrowLeft className="h-3.5 w-3.5" aria-hidden /> Pipeline
-      </Link>
+    <div className="px-4 py-5 sm:px-6">
+      <nav aria-label="Breadcrumb" className="mb-2 text-xs text-faint">
+        <Link href="/pipeline" className="hover:text-ink">
+          Pipeline
+        </Link>
+        <span className="mx-1.5" aria-hidden>
+          /
+        </span>
+        <span className="text-muted">{d.company?.name ?? d.deal.name}</span>
+      </nav>
       <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2.5">
@@ -55,8 +61,8 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
         <StageStepper dealId={d.deal.id} stageId={d.deal.stageId} stages={d.stages} canEdit={d.canEdit} />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <section className="min-w-0 rounded-lg border border-line bg-white">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <section className="min-w-0 rounded-lg border border-line bg-surface shadow-card">
           <header className="border-b border-line px-4 py-2.5">
             <h2 className="text-[13px] font-semibold text-ink">Activity</h2>
           </header>
@@ -64,14 +70,14 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
         </section>
 
         <aside className="space-y-5">
-          <section className="rounded-lg border border-line bg-white">
+          <section className="rounded-lg border border-line bg-surface shadow-card">
             <header className="border-b border-line px-4 py-2.5">
               <h2 className="text-[13px] font-semibold text-ink">Deal</h2>
             </header>
             <DealForm dealId={d.deal.id} initial={{ name: d.deal.name, value: d.deal.value, expectedCloseDate: d.deal.expectedCloseDate, nextStep: d.deal.nextStep }} canEdit={d.canEdit} />
           </section>
 
-          <section className="rounded-lg border border-line bg-white">
+          <section className="rounded-lg border border-line bg-surface shadow-card">
             <header className="flex items-center justify-between border-b border-line px-4 py-2.5">
               <h2 className="text-[13px] font-semibold text-ink">Tasks</h2>
               {d.canEdit && <NewTaskButton tz={tz} dealId={d.deal.id} leadId={d.lead?.id} defaultTitle={d.deal.nextStep ?? ""} />}
@@ -87,7 +93,7 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
             )}
           </section>
 
-          <section className="rounded-lg border border-line bg-white">
+          <section className="rounded-lg border border-line bg-surface shadow-card">
             <header className="border-b border-line px-4 py-2.5">
               <h2 className="text-[13px] font-semibold text-ink">Meetings</h2>
             </header>
@@ -113,10 +119,10 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
           </section>
 
           {d.contact && (
-            <section className="rounded-lg border border-line bg-white px-4 py-3 text-[13px]">
+            <section className="rounded-lg border border-line bg-surface px-4 py-3 text-[13px] shadow-card">
               <h2 className="mb-1.5 text-[13px] font-semibold text-ink">Contact</h2>
               {d.lead ? (
-                <Link href={`/leads/${d.lead.id}`} className="font-medium text-ink hover:text-brand-700 hover:underline">
+                <Link href={`/leads/${d.lead.id}`} className="font-medium text-ink hover:text-brand-200">
                   {d.contact.firstName} {d.contact.lastName}
                 </Link>
               ) : (
@@ -132,7 +138,7 @@ export default async function DealPage({ params }: { params: Promise<{ id: strin
                 </div>
               )}
               {d.company && (
-                <Link href={`/companies/${d.company.id}`} className="mt-2 block text-xs font-medium text-brand-700 hover:underline">
+                <Link href={`/companies/${d.company.id}`} className="mt-2 block text-xs font-medium text-brand-300 hover:underline">
                   {d.company.name} →
                 </Link>
               )}

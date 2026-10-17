@@ -27,11 +27,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             className={cn(
-              "pointer-events-auto flex items-start gap-2.5 rounded-lg px-3.5 py-2.5 text-[13px] shadow-lg animate-fade-in",
-              t.tone === "success" ? "bg-night text-white" : "bg-red-600 text-white",
+              "pointer-events-auto flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 text-[13px] text-ink shadow-elevated animate-fade-in",
+              t.tone === "success" ? "border-line bg-subtle" : "border-red-500/40 bg-[#2a1215]",
             )}
           >
-            {t.tone === "success" ? <CheckCircle2 className="mt-px h-4 w-4 shrink-0 text-brand-300" aria-hidden /> : <AlertCircle className="mt-px h-4 w-4 shrink-0" aria-hidden />}
+            {t.tone === "success" ? <CheckCircle2 className="mt-px h-4 w-4 shrink-0 text-emerald-400" aria-hidden /> : <AlertCircle className="mt-px h-4 w-4 shrink-0 text-red-400" aria-hidden />}
             <span>{t.text}</span>
           </div>
         ))}

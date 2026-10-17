@@ -72,8 +72,8 @@ export function scoreLead(i: ScoringInput, now: Date): { score: number; factors:
   return { score: Math.max(0, Math.min(100, raw)), factors: f.sort((a, b) => b.points - a.points) };
 }
 
-export function scoreTier(score: number): { label: string; tone: "green" | "amber" | "slate" } {
-  if (score >= 60) return { label: "Hot", tone: "green" };
+export function scoreTier(score: number): { label: "Hot" | "Warm" | "Cold"; tone: "orange" | "amber" | "blue" } {
+  if (score >= 60) return { label: "Hot", tone: "orange" };
   if (score >= 35) return { label: "Warm", tone: "amber" };
-  return { label: "Cold", tone: "slate" };
+  return { label: "Cold", tone: "blue" };
 }

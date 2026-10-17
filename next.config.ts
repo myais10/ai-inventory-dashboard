@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["@electric-sql/pglite"],
   poweredByHeader: false,
   devIndicators: false,
+  async redirects() {
+    return [{ source: "/team", destination: "/sales-floor", permanent: true }];
+  },
   async headers() {
     return [
       {

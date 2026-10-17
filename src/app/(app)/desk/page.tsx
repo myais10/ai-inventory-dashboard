@@ -3,6 +3,7 @@ import { requireSession } from "@/lib/auth/session";
 import { zonedDate } from "@/lib/domain/time";
 import { providers } from "@/lib/providers";
 import { activeCall, todayStats } from "@/lib/services/calls";
+import { connectByLocalHour } from "@/lib/services/analytics";
 import { ctxOf, listCampaigns } from "@/lib/services/context";
 import { getQueue } from "@/lib/services/desk";
 import { getLead } from "@/lib/services/leads";
@@ -24,7 +25,15 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
   const campaignId = sp.campaign && uuidRe.test(sp.campaign) ? sp.campaign : undefined;
   const tz = session.org.timezone;
 
-  const [queue, stats, campaigns] = await Promise.all([getQueue(ctx, { campaignId, skip }), todayStats(ctx, startOfToday(tz)), listCampaigns(ctx)]);
+  const [queue, stats, campaigns, hours] = await Promise.all([
+    getQueue(ctx, { campaignId, skip }),
+    todayStats(ctx, startOfToday(tz)),
+    listCampaigns(ctx),
+    // Team-wide connect rate by the contact's local hour over 30 days → "best time to call".
+    connectByLocalHour(ctx, new Date(Date.now() - 30 * 86_400_000), new Date()),
+  ]);
+  const solid = hours.filter((h) => h.dials >= 20);
+  const best = solid.reduce<(typeof hours)[number] | null>((a, h) => (!a || h.connects / h.dials > a.connects / a.dials ? h : a), null);
   const requested = sp.lead && uuidRe.test(sp.lead) ? sp.lead : null;
   const currentId = requested ?? (queue.due.find((r) => r.callableNow) ?? queue.due[0])?.lead.id ?? null;
   const lead = currentId ? await getLead(ctx, currentId) : null;
@@ -71,6 +80,8 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
       campaigns={campaigns.map((c) => ({ id: c.id, name: c.name }))}
       campaignId={campaignId ?? ""}
       stats={stats}
+      bestWindow={best ? { hour: best.hour, rate: best.connects / best.dials, avg: solid.reduce((a, h) => a + h.connects, 0) / Math.max(1, solid.reduce((a, h) => a + h.dials, 0)) } : null}
+      rank={lead ? queue.due.findIndex((r) => r.lead.id === lead.lead.id) + 1 : 0}
       provider={{ name: phone.name, live: phone.live, description: phone.description }}
       aiLabel={ai.live ? ai.name : `${ai.name} (demo)`}
       lead={
@@ -79,7 +90,7 @@ export default async function DeskPage({ searchParams }: { searchParams: Promise
               id: lead.lead.id,
               status: lead.lead.status,
               score: lead.lead.score,
-              scoreFactors: lead.lead.scoreFactors.slice(0, 4),
+              scoreFactors: lead.lead.scoreFactors,
               attemptCount: lead.lead.attemptCount,
               connectCount: lead.lead.connectCount,
               nextActionReason: lead.lead.nextActionReason,

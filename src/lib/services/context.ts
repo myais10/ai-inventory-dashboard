@@ -39,3 +39,14 @@ export async function listCampaigns(ctx: Ctx) {
   const db = await getDb();
   return db.select().from(s.campaigns).where(eq(s.campaigns.orgId, ctx.orgId)).orderBy(asc(s.campaigns.name));
 }
+
+/** Workspaces the signed-in user belongs to (for the workspace switcher). */
+export async function listMyWorkspaces(userId: string) {
+  const db = await getDb();
+  return db
+    .select({ id: s.organizations.id, name: s.organizations.name, role: s.memberships.role })
+    .from(s.memberships)
+    .innerJoin(s.organizations, eq(s.organizations.id, s.memberships.orgId))
+    .where(eq(s.memberships.userId, userId))
+    .orderBy(asc(s.organizations.name));
+}

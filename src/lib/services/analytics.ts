@@ -25,21 +25,28 @@ export async function callKpis(ctx: Ctx, since: Date, until: Date, userId?: stri
       connects: sql<number>`count(*) filter (where ${connected})::int`,
       meetings: sql<number>`count(*) filter (where ${s.calls.disposition} = 'meeting_booked')::int`,
       talkSec: sql<number>`coalesce(sum(${s.calls.durationSec}) filter (where ${connected}), 0)::int`,
+      // A conversation is a connected call that lasted at least a minute.
+      conversations: sql<number>`count(*) filter (where ${connected} and ${s.calls.durationSec} >= 60)::int`,
     })
     .from(s.calls)
     .where(callScope(ctx, since, until, userId));
+  const [w] = await db
+    .select({ wins: sql<number>`count(*)::int`, revenue: sql<number>`coalesce(sum(${s.deals.value}), 0)::int` })
+    .from(s.deals)
+    .innerJoin(s.pipelineStages, eq(s.pipelineStages.id, s.deals.stageId))
+    .where(and(eq(s.deals.orgId, ctx.orgId), eq(s.pipelineStages.kind, "won"), gte(s.deals.closedAt, since), lt(s.deals.closedAt, until), userId ? eq(s.deals.ownerId, userId) : undefined));
   const [p] = await db
     .select({ created: sql<number>`coalesce(sum(${s.deals.value}), 0)::int`, n: sql<number>`count(*)::int` })
     .from(s.deals)
     .where(and(eq(s.deals.orgId, ctx.orgId), gte(s.deals.createdAt, since), lt(s.deals.createdAt, until), userId ? eq(s.deals.ownerId, userId) : undefined));
-  return { ...r, pipelineCreated: p.created, dealsCreated: p.n };
+  return { ...r, ...w, pipelineCreated: p.created, dealsCreated: p.n };
 }
 
 /** Per-rep activity for the team table, plus the backlog signals a manager acts on. */
 export async function repTable(ctx: Ctx, since: Date, until: Date) {
   const db = await getDb();
   const now = new Date();
-  const [calls, backlog, overdue, reps] = await Promise.all([
+  const [calls, backlog, overdue, reps, live, deals] = await Promise.all([
     db
       .select({
         userId: s.calls.userId,
@@ -48,6 +55,7 @@ export async function repTable(ctx: Ctx, since: Date, until: Date) {
         meetings: sql<number>`count(*) filter (where ${s.calls.disposition} = 'meeting_booked')::int`,
         talkSec: sql<number>`coalesce(sum(${s.calls.durationSec}) filter (where ${connected}), 0)::int`,
         lastCall: sql<Date>`max(${s.calls.startedAt})`,
+        conversations: sql<number>`count(*) filter (where ${connected} and ${s.calls.durationSec} >= 60)::int`,
       })
       .from(s.calls)
       .where(callScope(ctx, since, until))
@@ -82,11 +90,28 @@ export async function repTable(ctx: Ctx, since: Date, until: Date) {
       .from(s.memberships)
       .innerJoin(s.users, eq(s.users.id, s.memberships.userId))
       .where(eq(s.memberships.orgId, ctx.orgId)),
+    // Reps with a call in progress right now (started in the last 2h, not yet ended).
+    db
+      .selectDistinct({ userId: s.calls.userId })
+      .from(s.calls)
+      .where(and(eq(s.calls.orgId, ctx.orgId), eq(s.calls.status, "in_progress"), isNull(s.calls.endedAt), gte(s.calls.startedAt, new Date(now.getTime() - 2 * 3_600_000)))),
+    db
+      .select({
+        userId: s.deals.ownerId,
+        opps: sql<number>`count(*) filter (where ${s.deals.createdAt} >= ${since} and ${s.deals.createdAt} < ${until})::int`,
+        openValue: sql<number>`coalesce(sum(${s.deals.value}) filter (where ${s.pipelineStages.kind} = 'open'), 0)::int`,
+      })
+      .from(s.deals)
+      .innerJoin(s.pipelineStages, eq(s.pipelineStages.id, s.deals.stageId))
+      .where(eq(s.deals.orgId, ctx.orgId))
+      .groupBy(s.deals.ownerId),
   ]);
+  const onCall = new Set(live.map((l) => l.userId));
   const by = <T extends { userId: string | null }>(xs: T[]) => new Map(xs.map((x) => [x.userId, x]));
   const c = by(calls);
   const b = by(backlog);
   const o = by(overdue);
+  const d = by(deals);
   return reps
     .filter((r) => r.role === "rep" || c.has(r.id) || b.has(r.id))
     .map((r) => ({
@@ -100,6 +125,10 @@ export async function repTable(ctx: Ctx, since: Date, until: Date) {
       callbacks: b.get(r.id)?.callbacks ?? 0,
       lateCallbacks: b.get(r.id)?.lateCallbacks ?? 0,
       overdueTasks: o.get(r.id)?.n ?? 0,
+      conversations: c.get(r.id)?.conversations ?? 0,
+      onCall: onCall.has(r.id),
+      opps: d.get(r.id)?.opps ?? 0,
+      openValue: d.get(r.id)?.openValue ?? 0,
     }))
     .sort((a, z) => z.meetings - a.meetings || z.dials - a.dials);
 }
@@ -225,4 +254,41 @@ export async function attention(ctx: Ctx) {
       .limit(10),
   ]);
   return { unassigned, stalled, upcomingMeetings };
+}
+
+/** The most recent calls across the team — what is being worked right now. */
+export async function recentCalls(ctx: Ctx, limit = 12) {
+  const db = await getDb();
+  return db
+    .select({
+      id: s.calls.id,
+      at: s.calls.startedAt,
+      status: s.calls.status,
+      disposition: s.calls.disposition,
+      durationSec: s.calls.durationSec,
+      rep: s.users.name,
+      leadId: s.leads.id,
+      first: s.contacts.firstName,
+      last: s.contacts.lastName,
+      company: s.companies.name,
+    })
+    .from(s.calls)
+    .innerJoin(s.leads, eq(s.leads.id, s.calls.leadId))
+    .innerJoin(s.contacts, eq(s.contacts.id, s.leads.contactId))
+    .leftJoin(s.companies, eq(s.companies.id, s.leads.companyId))
+    .leftJoin(s.users, eq(s.users.id, s.calls.userId))
+    .where(and(eq(s.calls.orgId, ctx.orgId), ne(s.calls.status, "abandoned")))
+    .orderBy(sql`${s.calls.startedAt} desc`)
+    .limit(limit);
+}
+
+/** Open pipeline value right now (not period-bound). */
+export async function openPipelineValue(ctx: Ctx) {
+  const db = await getDb();
+  const [r] = await db
+    .select({ v: sql<number>`coalesce(sum(${s.deals.value}), 0)::int`, n: sql<number>`count(*)::int` })
+    .from(s.deals)
+    .innerJoin(s.pipelineStages, eq(s.pipelineStages.id, s.deals.stageId))
+    .where(and(eq(s.deals.orgId, ctx.orgId), eq(s.pipelineStages.kind, "open")));
+  return r;
 }
